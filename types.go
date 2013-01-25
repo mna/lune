@@ -3,6 +3,10 @@ package lune
 type valtype uint
 
 const (
+	strTableCap = 100
+)
+
+const (
 	vtNil valtype = iota
 	vtBool
 	vtNumber
@@ -15,16 +19,44 @@ const (
 
 /*
   Values are represented this way:
-  nil:      v is ignored (is zero)
-  bool:     v is either 0 (false) or 1 (true)
-  number:   v is the actual value
-  string:   v is the pointer to the string table value
-  function: v is the pointer to ?
-  table:    v is the pointer to ?
-  thread:   v is the pointer to ?
-  userdata: v is the pointer to ?
+  nil:      value is nil
+  bool:     value is bool
+  number:   value is float64 or float32 based on GOARCH?
+  string:   value is int, the index to the string table value
+  function: value is int, the index to ?
+  table:    ..
+  thread:   ..
+  userdata: ..
 */
-type value struct {
-	t valtype
-	v float64
+type value interface{}
+
+type table struct {
+	m map[value]value
+	a []value
+}
+
+type strTable map[string]uint
+
+func newStrTable() strTable {
+	return make(strTable, strTableCap)
+}
+
+func (st strTable) intern(s string) bool {
+	cnt, ok := st[s]
+	if !ok {
+		// This string doesn't exist yet
+		st[s] = 1
+	} else {
+		// This string already exists, increment the refcount
+		st[s] = cnt + 1
+	}
+	return ok
+}
+
+type stack struct {
+	s []value
+}
+
+func newStack() *stack {
+	return &stack{}
 }
