@@ -1,4 +1,4 @@
-package lune
+package vm
 
 type gState struct {
 	strt strTable

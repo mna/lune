@@ -1,4 +1,4 @@
-package lune
+package vm
 
 /*
   Port of lopcodes.h
