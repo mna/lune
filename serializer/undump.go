@@ -34,17 +34,18 @@ type gHeader struct {
 	Tail       [_TAIL_SZ]byte
 }
 
-func (h gHeader) MajorVersion() byte {
+func (h *gHeader) MajorVersion() byte {
 	return h.Version >> 4
 }
 
-func (h gHeader) MinorVersion() byte {
+func (h *gHeader) MinorVersion() byte {
 	return h.Version & 0x0F
 }
 
 func NewHeader() *gHeader {
 	var i int
-	var ui uint64 // Force 8 bytes, uint gives only 4, inconsistent with Lua on 64-bit platforms
+	var ui uint64 // TODO : Force 8 bytes, uint gives only 4, inconsistent with Lua on 64-bit platforms
+	var instr instruction
 
 	// Create a standard header based on the current architecture
 	return &gHeader{
@@ -54,12 +55,27 @@ func NewHeader() *gHeader {
 		Endianness: 1, // TODO : For now, force little-endian
 		IntSz:      byte(unsafe.Sizeof(i)),
 		SizeTSz:    byte(unsafe.Sizeof(ui)), // TODO : Is this consistent with what Lua gives on this platform?
-		InstrSz:    4,                       // TODO : Sizeof(Instruction) in Lua
-		NumberSz:   8,                       // TODO : Sizeof(the custom Number size)
-		IntFlag:    0,                       // TODO : Support non-floating point compilation?
+		InstrSz:    byte(unsafe.Sizeof(instr)),
+		NumberSz:   8, // TODO : Sizeof(the custom Number size)
+		IntFlag:    0, // TODO : Support non-floating point compilation?
 		Tail:       _TAIL,
 	}
 }
+
+type prototype struct {
+	meta *funcMeta
+	code []instruction
+}
+
+type funcMeta struct {
+	LineDefined     uint32
+	LastLineDefined uint32
+	NumParams       byte
+	IsVarArg        byte
+	MaxStackSize    byte
+}
+
+type instruction int32
 
 func readString(r io.Reader) (string, error) {
 	var sz uint64
@@ -82,6 +98,61 @@ func readString(r io.Reader) (string, error) {
 	return s, nil
 }
 
+func readConstants(r io.Reader, p *prototype) error {
+	var n uint32
+	//var i uint32
+
+	err := binary.Read(r, binary.LittleEndian, &n)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Number of constants: %d\n", n)
+	return nil
+}
+
+func readCode(r io.Reader, p *prototype) error {
+	var n uint32
+	var i uint32
+
+	err := binary.Read(r, binary.LittleEndian, &n)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Number of instructions: %d\n", n)
+	for i = 0; i < n; i++ {
+		var instr instruction
+		err = binary.Read(r, binary.LittleEndian, &instr)
+		if err != nil {
+			return err
+		}
+		p.code = append(p.code, instr)
+	}
+	return nil
+}
+
+func readFunction(r io.Reader) (*prototype, error) {
+	var fm funcMeta
+	var p prototype
+
+	err := binary.Read(r, binary.LittleEndian, &fm)
+	if err != nil {
+		return nil, err
+	}
+	p.meta = &fm
+	fmt.Printf("Function meta: %+v\n", fm)
+
+	err = readCode(r, &p)
+	if err != nil {
+		return nil, err
+	}
+
+	err = readConstants(r, &p)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
 func readHeader(r io.Reader) (*gHeader, error) {
 	var h gHeader
 
@@ -94,27 +165,39 @@ func readHeader(r io.Reader) (*gHeader, error) {
 	stdH := NewHeader()
 	fmt.Printf("h: %v\n", h)
 	fmt.Printf("stdH: %v\n", *stdH)
-	if h != *stdH {
-		return nil, fmt.Errorf("invalid header")
+
+	// As a whole
+	if h == *stdH {
+		return &h, nil
+	} else if h.Signature != stdH.Signature {
+		return nil, fmt.Errorf("is not a precompiled chunk")
+	} else if h.Version != stdH.Version {
+		return nil, fmt.Errorf("version mismatch, got %d.%d, expected %d.%d", h.MajorVersion(), h.MinorVersion(), stdH.MajorVersion(), stdH.MinorVersion())
 	}
-	return &h, nil
+
+	return nil, fmt.Errorf("incompatible")
 }
 
 func Load(r io.Reader) error {
-	// First up, the Header (12 bytes)
+	// First up, the Header (12 bytes) + LUAC_TAIL to "catch conversion errors", as described in Lua
 	h, err := readHeader(r)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%+v\n", h)
+	fmt.Printf("Header: %+v\n", h)
 
-	// Then, the LUAC_TAIL to "catch conversion errors", as described in Lua
-
-	s, err := readString(r)
+	// Then, the function header (a prototype)
+	p, err := readFunction(r)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", s)
-
+	fmt.Printf("Prototype: %+v\n", p)
+	/*
+		s, err := readString(r)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("String: %s\n", s)
+	*/
 	return nil
 }
