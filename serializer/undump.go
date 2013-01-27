@@ -44,9 +44,9 @@ func (h *gHeader) MinorVersion() byte {
 }
 
 func NewHeader() *gHeader {
-	var i int
+	var i int32   // Force 4 bytes even on 64bit systems? Validate on 64bit Linux
 	var ui uint64 // TODO : Force 8 bytes, uint gives only 4, inconsistent with Lua on 64-bit platforms
-	var instr instruction
+	var instr types.Instruction
 
 	// Create a standard header based on the current architecture
 	return &gHeader{
@@ -64,9 +64,10 @@ func NewHeader() *gHeader {
 }
 
 type prototype struct {
-	meta *funcMeta
-	code []instruction
-	ks   []types.Value
+	meta   *funcMeta
+	code   []types.Instruction
+	ks     []types.Value
+	protos []*prototype
 }
 
 type funcMeta struct {
@@ -76,8 +77,6 @@ type funcMeta struct {
 	IsVarArg        byte
 	MaxStackSize    byte
 }
-
-type instruction int32
 
 func readString(r io.Reader) (string, error) {
 	var sz uint64
@@ -169,7 +168,7 @@ func readCode(r io.Reader, p *prototype) error {
 	}
 	fmt.Printf("Number of instructions: %d\n", n)
 	for i = 0; i < n; i++ {
-		var instr instruction
+		var instr types.Instruction
 		err = binary.Read(r, binary.LittleEndian, &instr)
 		if err != nil {
 			return err
@@ -182,7 +181,10 @@ func readCode(r io.Reader, p *prototype) error {
 func readFunction(r io.Reader) (*prototype, error) {
 	var fm funcMeta
 	var p prototype
+	var n uint32
+	var i uint32
 
+	// Meta-data about the function
 	err := binary.Read(r, binary.LittleEndian, &fm)
 	if err != nil {
 		return nil, err
@@ -190,15 +192,32 @@ func readFunction(r io.Reader) (*prototype, error) {
 	p.meta = &fm
 	fmt.Printf("Function meta: %+v\n", fm)
 
+	// Function's instructions
 	err = readCode(r, &p)
 	if err != nil {
 		return nil, err
 	}
 
+	// Function's constants
 	err = readConstants(r, &p)
 	if err != nil {
 		return nil, err
 	}
+
+	// Inner function's functions (prototypes)
+	err = binary.Read(r, binary.LittleEndian, &n)
+	if err != nil {
+		return nil, err
+	}
+	for i = 0; i < n; i++ {
+		var subP *prototype
+		subP, err = readFunction(r)
+		if err != nil {
+			return nil, err
+		}
+		p.protos = append(p.protos, subP)
+	}
+
 	return &p, nil
 }
 
@@ -241,6 +260,10 @@ func Load(r io.Reader) error {
 		return err
 	}
 	fmt.Printf("Prototype: %+v\n", p)
+
+	for _, i := range p.code {
+		fmt.Println(types.GetOpCode(i))
+	}
 	/*
 		s, err := readString(r)
 		if err != nil {
