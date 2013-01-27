@@ -70,11 +70,51 @@ func (i Instruction) GetArgsBx() int {
 	return (i.GetArgBx() - MAXARG_sBx)
 }
 
-// TODO : Needs more work to translate K notation, see lvm.c
+const (
+	BITRK = (1 << (sizeB - 1)) // this bit 1 means constant (0 means register)
+)
+
+// test whether value is a constant
+func isK(v int) bool {
+	return (v & BITRK) != 0
+}
+
+// gets the index of the constant
+func indexK(v int) int {
+	return (v & (^BITRK))
+}
 
 func (i Instruction) String() string {
-	// TODO : Switch depending on opmode
-	return fmt.Sprintf("%s a=%d, b=%d, c=%d, ax=%d, bx=%d, sbx=%d", i.GetOpCode(), i.GetArgA(), i.GetArgB(), i.GetArgC(), i.GetArgAx(), i.GetArgBx(), i.GetArgsBx())
+	op := i.GetOpCode()
+	om := op.GetOpMode()
+
+	switch om {
+	case MODE_iABC:
+		var a, b, c int
+
+		a = i.GetArgA()
+		bm := op.GetBMode()
+		if bm != OpArgN {
+			b = i.GetArgB()
+			if bm == OpArgK && isK(b) {
+				b = -1 - indexK(b)
+			}
+		}
+
+		cm := op.GetCMode()
+		if cm != OpArgN {
+			c = i.GetArgC()
+			if cm == OpArgK && isK(c) {
+				c = -1 - indexK(c)
+			}
+		}
+		return fmt.Sprintf("%s a=%d, b=%d, c=%d", op, a, b, c)
+
+	case MODE_iABx:
+	case MODE_iAx:
+	case MODE_iAsBx:
+	}
+	return ""
 }
 
 // VM opcodes

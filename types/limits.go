@@ -34,4 +34,6 @@ const (
 	MAXARG_A   = ((1 << sizeA) - 1)
 	MAXARG_B   = ((1 << sizeB) - 1)
 	MAXARG_C   = ((1 << sizeC) - 1)
+
+	MAXINDEXRK = (BITRK - 1)
 )
