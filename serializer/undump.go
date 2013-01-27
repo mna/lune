@@ -262,7 +262,7 @@ func Load(r io.Reader) error {
 	fmt.Printf("Prototype: %+v\n", p)
 
 	for _, i := range p.code {
-		fmt.Println(types.GetOpCode(i))
+		fmt.Println(i)
 	}
 	/*
 		s, err := readString(r)

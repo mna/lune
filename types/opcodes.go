@@ -1,5 +1,9 @@
 package types
 
+import (
+	"fmt"
+)
+
 /*
   Port of lopcodes.h
 
@@ -33,30 +37,53 @@ const (
 	MODE_iAx
 )
 
-// Size of opcode arguments
-const (
-	sizeC  = 9
-	sizeB  = 9
-	sizeBx = sizeC + sizeB
-	sizeA  = 8
-	sizeAx = sizeC + sizeB + sizeA
-	sizeOp = 6
-)
+type Instruction int32
 
-// Position of opcode arguments
-const (
-	posOp = 0
-	posA  = posOp + sizeOp
-	posC  = posA + sizeA
-	posB  = posC + sizeC
-	posBx = posC
-	posAx = posA
-)
+func mask0(n, p uint) Instruction {
+	return ^(mask1(n, p))
+}
 
-func GetOpCode(i Instruction) OpCode {
-	var o OpCode = OpCode((i >> posOp) & (^(0 << sizeOp)))
-	//#define GET_OPCODE(i)  (cast(OpCode, ((i)>>POS_OP) & MASK1(SIZE_OP,0)))
-	return o
+func mask1(n, p uint) Instruction {
+	return ((^((^Instruction(0)) << n)) << p)
+}
+
+func getArg(i Instruction, pos, size uint) int {
+	return int((i >> pos) & (mask1(size, 0)))
+}
+
+func (i Instruction) GetOpCode() OpCode {
+	return OpCode((i >> posOp) & mask1(sizeOp, 0))
+}
+
+func (i Instruction) GetArgA() int {
+	return getArg(i, posA, sizeA)
+}
+
+func (i Instruction) GetArgB() int {
+	return getArg(i, posB, sizeB)
+}
+
+func (i Instruction) GetArgC() int {
+	return getArg(i, posC, sizeC)
+}
+
+func (i Instruction) GetArgBx() int {
+	return getArg(i, posBx, sizeBx)
+}
+
+func (i Instruction) GetArgAx() int {
+	return getArg(i, posAx, sizeAx)
+}
+
+func (i Instruction) GetArgsBx() int {
+	return (i.GetArgBx() - MAXARG_sBx)
+}
+
+// TODO : Needs more work to translate K notation, see lvm.c
+
+func (i Instruction) String() string {
+	// TODO : Switch depending on opmode
+	return fmt.Sprintf("%s a=%d, b=%d, c=%d, ax=%d, bx=%d, sbx=%d", i.GetOpCode(), i.GetArgA(), i.GetArgB(), i.GetArgC(), i.GetArgAx(), i.GetArgBx(), i.GetArgsBx())
 }
 
 // VM opcodes

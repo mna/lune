@@ -32,8 +32,6 @@ const (
 */
 type Value interface{}
 
-type Instruction int32
-
 type table struct {
 	m map[Value]Value
 	a []Value
