@@ -28,16 +28,7 @@ import (
   represented by 2*max), which is half the maximum for the corresponding
   unsigned argument.
 */
-type OpMode int
-
-const (
-	MODE_iABC OpMode = iota
-	MODE_iABx
-	MODE_iAsBx
-	MODE_iAx
-)
-
-type Instruction int32
+type Instruction uint32
 
 func mask0(n, p uint) Instruction {
 	return ^(mask1(n, p))
@@ -178,4 +169,99 @@ var opNames = [...]string{
 
 func (o OpCode) String() string {
 	return opNames[o]
+}
+
+/*
+TODO :
+#define testAMode(m)	(luaP_opmodes[m] & (1 << 6))
+#define testTMode(m)	(luaP_opmodes[m] & (1 << 7))
+*/
+
+func (o OpCode) GetOpMode() OpMode {
+	return OpMode(opMasks[o] & 3)
+}
+
+func (o OpCode) GetBMode() OpArgMask {
+	return OpArgMask((opMasks[o] >> 4) & 3)
+}
+
+func (o OpCode) GetCMode() OpArgMask {
+	return OpArgMask((opMasks[o] >> 2) & 3)
+}
+
+// Operator mode, defines how to access the other bits of the instruction.
+type OpMode byte
+
+const (
+	MODE_iABC OpMode = iota
+	MODE_iABx
+	MODE_iAsBx
+	MODE_iAx
+)
+
+/*
+** masks for instruction properties. The format is:
+** bits 0-1: op mode
+** bits 2-3: C arg mode
+** bits 4-5: B arg mode
+** bit 6: instruction set register A
+** bit 7: operator is a test (next instruction must be a jump)
+ */
+type OpArgMask byte
+
+const (
+	OpArgN OpArgMask = iota // Argument is not used
+	OpArgU                  // Argument is used
+	OpArgR                  // Argument is a register or a jump offset
+	OpArgK                  // Argument is a constant or register/constant
+)
+
+// OpMask defines how the instruction uses its arguments.
+type OpMask byte
+
+func createOpMask(tst, regA byte, bArgMode, cArgMode OpArgMask, om OpMode) OpMask {
+	return OpMask((tst << 7) | (regA << 6) | (byte(bArgMode) << 4) | (byte(cArgMode) << 2) | byte(om))
+}
+
+var opMasks = [...]OpMask{
+	OP_MOVE:     createOpMask(0, 1, OpArgR, OpArgN, MODE_iABC),
+	OP_LOADK:    createOpMask(0, 1, OpArgK, OpArgN, MODE_iABx),
+	OP_LOADKx:   createOpMask(0, 1, OpArgN, OpArgN, MODE_iABx),
+	OP_LOADBOOL: createOpMask(0, 1, OpArgU, OpArgU, MODE_iABC),
+	OP_LOADNIL:  createOpMask(0, 1, OpArgU, OpArgN, MODE_iABC),
+	OP_GETUPVAL: createOpMask(0, 1, OpArgU, OpArgN, MODE_iABC),
+	OP_GETTABUP: createOpMask(0, 1, OpArgU, OpArgK, MODE_iABC),
+	OP_GETTABLE: createOpMask(0, 1, OpArgR, OpArgK, MODE_iABC),
+	OP_SETTABUP: createOpMask(0, 0, OpArgK, OpArgK, MODE_iABC),
+	OP_SETUPVAL: createOpMask(0, 0, OpArgU, OpArgN, MODE_iABC),
+	OP_SETTABLE: createOpMask(0, 0, OpArgK, OpArgK, MODE_iABC),
+	OP_NEWTABLE: createOpMask(0, 1, OpArgU, OpArgU, MODE_iABC),
+	OP_SELF:     createOpMask(0, 1, OpArgR, OpArgK, MODE_iABC),
+	OP_ADD:      createOpMask(0, 1, OpArgK, OpArgK, MODE_iABC),
+	OP_SUB:      createOpMask(0, 1, OpArgK, OpArgK, MODE_iABC),
+	OP_MUL:      createOpMask(0, 1, OpArgK, OpArgK, MODE_iABC),
+	OP_DIV:      createOpMask(0, 1, OpArgK, OpArgK, MODE_iABC),
+	OP_MOD:      createOpMask(0, 1, OpArgK, OpArgK, MODE_iABC),
+	OP_POW:      createOpMask(0, 1, OpArgK, OpArgK, MODE_iABC),
+	OP_UNM:      createOpMask(0, 1, OpArgR, OpArgN, MODE_iABC),
+	OP_NOT:      createOpMask(0, 1, OpArgR, OpArgN, MODE_iABC),
+	OP_LEN:      createOpMask(0, 1, OpArgR, OpArgN, MODE_iABC),
+	OP_CONCAT:   createOpMask(0, 1, OpArgR, OpArgR, MODE_iABC),
+	OP_JMP:      createOpMask(0, 0, OpArgR, OpArgN, MODE_iAsBx),
+	OP_EQ:       createOpMask(1, 0, OpArgK, OpArgK, MODE_iABC),
+	OP_LT:       createOpMask(1, 0, OpArgK, OpArgK, MODE_iABC),
+	OP_LE:       createOpMask(1, 0, OpArgK, OpArgK, MODE_iABC),
+	OP_TEST:     createOpMask(1, 0, OpArgN, OpArgU, MODE_iABC),
+	OP_TESTSET:  createOpMask(1, 1, OpArgR, OpArgU, MODE_iABC),
+	OP_CALL:     createOpMask(0, 1, OpArgU, OpArgU, MODE_iABC),
+	OP_TAILCALL: createOpMask(0, 1, OpArgU, OpArgU, MODE_iABC),
+	OP_RETURN:   createOpMask(0, 0, OpArgU, OpArgN, MODE_iABC),
+	OP_FORLOOP:  createOpMask(0, 1, OpArgR, OpArgN, MODE_iAsBx),
+	OP_FORPREP:  createOpMask(0, 1, OpArgR, OpArgN, MODE_iAsBx),
+	OP_TFORCALL: createOpMask(0, 0, OpArgN, OpArgU, MODE_iABC),
+	OP_TFORLOOP: createOpMask(0, 1, OpArgR, OpArgN, MODE_iAsBx),
+	OP_SETLIST:  createOpMask(0, 0, OpArgU, OpArgU, MODE_iABC),
+	OP_CLOSURE:  createOpMask(0, 1, OpArgU, OpArgN, MODE_iABx),
+	OP_VARARG:   createOpMask(0, 1, OpArgU, OpArgN, MODE_iABC),
+	OP_EXTRAARG: createOpMask(0, 0, OpArgU, OpArgU, MODE_iAx),
 }
