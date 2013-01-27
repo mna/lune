@@ -1,5 +1,6 @@
 package vm
 
+/*
 type gState struct {
 	strt strTable
 }
@@ -24,3 +25,4 @@ type callInfo struct {
 	prev, next *callInfo
 	nResults   uint8
 }
+*/

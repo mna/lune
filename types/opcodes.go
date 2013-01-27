@@ -1,4 +1,4 @@
-package vm
+package types
 
 /*
   Port of lopcodes.h

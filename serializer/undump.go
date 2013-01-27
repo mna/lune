@@ -3,6 +3,7 @@ package serializer
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/PuerkitoBio/lune/types"
 	"io"
 	"unsafe"
 )
@@ -65,6 +66,7 @@ func NewHeader() *gHeader {
 type prototype struct {
 	meta *funcMeta
 	code []instruction
+	ks   []types.Value
 }
 
 type funcMeta struct {
@@ -81,7 +83,6 @@ func readString(r io.Reader) (string, error) {
 	var sz uint64
 	var s string
 
-	fmt.Println("Sizeof uint64 ", unsafe.Sizeof(sz))
 	err := binary.Read(r, binary.LittleEndian, &sz)
 	if err != nil {
 		return "", err
@@ -93,20 +94,68 @@ func readString(r io.Reader) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		s = string(ch)
+		// Remove 0x00
+		s = string(ch[:len(ch)-1])
 	}
 	return s, nil
 }
 
 func readConstants(r io.Reader, p *prototype) error {
 	var n uint32
-	//var i uint32
+	var i uint32
 
 	err := binary.Read(r, binary.LittleEndian, &n)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Number of constants: %d\n", n)
+
+	for i = 0; i < n; i++ {
+		// Read the constant's type, 1 byte
+		var t byte
+		err = binary.Read(r, binary.LittleEndian, &t)
+		if err != nil {
+			return err
+		}
+		switch types.ValType(t) {
+		case types.TNIL:
+			var v types.Value = nil
+			p.ks = append(p.ks, v)
+		case types.TBOOL:
+			var v types.Value
+			err = binary.Read(r, binary.LittleEndian, &t)
+			if err != nil {
+				return err
+			}
+			if t == 0 {
+				v = false
+			} else if t == 1 {
+				v = true
+			} else {
+				return fmt.Errorf("invalid value for boolean: %d", t)
+			}
+			p.ks = append(p.ks, v)
+		case types.TNUMBER:
+			// TODO : A number is a double in Lua, will a read in a float64 work?
+			var f float64
+			var v types.Value
+			err = binary.Read(r, binary.LittleEndian, &f)
+			if err != nil {
+				return err
+			}
+			v = f
+			p.ks = append(p.ks, v)
+		case types.TSTRING:
+			var v types.Value
+			v, err = readString(r)
+			if err != nil {
+				return err
+			}
+			p.ks = append(p.ks, v)
+		default:
+			return fmt.Errorf("unexpected constant type: %d", t)
+		}
+	}
 	return nil
 }
 

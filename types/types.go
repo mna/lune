@@ -1,20 +1,22 @@
-package vm
+package types
 
-type valtype uint
+type ValType byte
 
 const (
 	strTableCap = 100
 )
 
 const (
-	vtNil valtype = iota
-	vtBool
-	vtNumber
-	vtString
-	vtFunction
-	vtTable
-	vtThread
-	vtUserData // TODO : required?
+	// Value types constants, must match with Lua's, see lua.h grep "basic types"
+	TNIL ValType = iota
+	TBOOL
+	TLIGHTUSERDATA
+	TNUMBER
+	TSTRING
+	TTABLE
+	TFUNCTION
+	TUSERDATA
+	TTHREAD
 )
 
 /*
@@ -28,11 +30,11 @@ const (
   thread:   ..
   userdata: ..
 */
-type value interface{}
+type Value interface{}
 
 type table struct {
-	m map[value]value
-	a []value
+	m map[Value]Value
+	a []Value
 }
 
 type strTable map[string]uint
@@ -54,7 +56,7 @@ func (st strTable) intern(s string) bool {
 }
 
 type stack struct {
-	s []value
+	s []Value
 }
 
 func newStack() *stack {
