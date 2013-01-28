@@ -127,123 +127,98 @@ type locVar struct {
 	endpc   int
 }
 
-func readString(r io.Reader) (string, error) {
+func readString(r io.Reader) string {
 	var sz uint64
 	var s string
 
-	err := binary.Read(r, binary.LittleEndian, &sz)
-	if err != nil {
-		return "", err
+	if err := binary.Read(r, binary.LittleEndian, &sz); err != nil {
+		panic(err)
 	}
 	if sz > 0 {
 		ch := make([]byte, sz)
-		err = binary.Read(r, binary.LittleEndian, ch)
-		if err != nil {
-			return "", err
+		if err := binary.Read(r, binary.LittleEndian, ch); err != nil {
+			panic(err)
 		}
 		// Remove 0x00
 		s = string(ch[:len(ch)-1])
 	}
-	return s, nil
+	return s
 }
 
-func readDebug(r io.Reader, p *prototype) error {
+func readDebug(r io.Reader, p *prototype) {
 	var n uint32
 	var i uint32
-	var err error
 
 	// Source file name
-	p.source, err = readString(r)
-	if err != nil {
-		return err
-	}
+	p.source = readString(r)
 
 	// Line numbers
-	err = binary.Read(r, binary.LittleEndian, &n)
-	if err != nil {
-		return err
+	if err := binary.Read(r, binary.LittleEndian, &n); err != nil {
+		panic(err)
 	}
 	for i = 0; i < n; i++ {
 		var li int32
-		err = binary.Read(r, binary.LittleEndian, &li)
-		if err != nil {
-			return err
+		if err := binary.Read(r, binary.LittleEndian, &li); err != nil {
+			panic(err)
 		}
 		p.lineInfo = append(p.lineInfo, li)
 	}
 
 	// Local variables
-	err = binary.Read(r, binary.LittleEndian, &n)
-	if err != nil {
-		return err
+	if err := binary.Read(r, binary.LittleEndian, &n); err != nil {
+		panic(err)
 	}
 	for i = 0; i < n; i++ {
 		var lv locVar
-		lv.name, err = readString(r)
-		if err != nil {
-			return err
+		lv.name = readString(r)
+
+		if err := binary.Read(r, binary.LittleEndian, &lv.startpc); err != nil {
+			panic(err)
 		}
-		err = binary.Read(r, binary.LittleEndian, &lv.startpc)
-		if err != nil {
-			return err
-		}
-		err = binary.Read(r, binary.LittleEndian, &lv.endpc)
-		if err != nil {
-			return err
+		if err := binary.Read(r, binary.LittleEndian, &lv.endpc); err != nil {
+			panic(err)
 		}
 		p.locVars = append(p.locVars, &lv)
 	}
 
 	// Upvalue names
-	err = binary.Read(r, binary.LittleEndian, &n)
-	if err != nil {
-		return err
+	if err := binary.Read(r, binary.LittleEndian, &n); err != nil {
+		panic(err)
 	}
 	for i = 0; i < n; i++ {
-		p.upvalues[i].name, err = readString(r)
-		if err != nil {
-			return err
-		}
+		p.upvalues[i].name = readString(r)
 	}
-
-	return nil
 }
 
-func readUpvalues(r io.Reader, p *prototype) error {
+func readUpvalues(r io.Reader, p *prototype) {
 	var n uint32
 	var i uint32
 
-	err := binary.Read(r, binary.LittleEndian, &n)
-	if err != nil {
-		return err
+	if err := binary.Read(r, binary.LittleEndian, &n); err != nil {
+		panic(err)
 	}
 	for i = 0; i < n; i++ {
 		var ba [2]byte
-		err = binary.Read(r, binary.LittleEndian, &ba)
-		if err != nil {
-			return err
+		if err := binary.Read(r, binary.LittleEndian, &ba); err != nil {
+			panic(err)
 		}
 		p.upvalues = append(p.upvalues, &upvalue{"", ba[0], ba[1]})
 	}
-
-	return nil
 }
 
-func readConstants(r io.Reader, p *prototype) error {
+func readConstants(r io.Reader, p *prototype) {
 	var n uint32
 	var i uint32
 
-	err := binary.Read(r, binary.LittleEndian, &n)
-	if err != nil {
-		return err
+	if err := binary.Read(r, binary.LittleEndian, &n); err != nil {
+		panic(err)
 	}
 
 	for i = 0; i < n; i++ {
 		// Read the constant's type, 1 byte
 		var t byte
-		err = binary.Read(r, binary.LittleEndian, &t)
-		if err != nil {
-			return err
+		if err := binary.Read(r, binary.LittleEndian, &t); err != nil {
+			panic(err)
 		}
 		switch types.ValType(t) {
 		case types.TNIL:
@@ -251,121 +226,87 @@ func readConstants(r io.Reader, p *prototype) error {
 			p.ks = append(p.ks, v)
 		case types.TBOOL:
 			var v types.Value
-			err = binary.Read(r, binary.LittleEndian, &t)
-			if err != nil {
-				return err
+			if err := binary.Read(r, binary.LittleEndian, &t); err != nil {
+				panic(err)
 			}
 			if t == 0 {
 				v = false
 			} else if t == 1 {
 				v = true
 			} else {
-				return fmt.Errorf("invalid value for boolean: %d", t)
+				panic(fmt.Errorf("invalid value for boolean: %d", t))
 			}
 			p.ks = append(p.ks, v)
 		case types.TNUMBER:
 			// TODO : A number is a double in Lua, will a read in a float64 work?
 			var f float64
 			var v types.Value
-			err = binary.Read(r, binary.LittleEndian, &f)
-			if err != nil {
-				return err
+			if err := binary.Read(r, binary.LittleEndian, &f); err != nil {
+				panic(err)
 			}
 			v = f
 			p.ks = append(p.ks, v)
 		case types.TSTRING:
-			var v types.Value
-			v, err = readString(r)
-			if err != nil {
-				return err
-			}
-			p.ks = append(p.ks, v)
+			p.ks = append(p.ks, readString(r))
 		default:
-			return fmt.Errorf("unexpected constant type: %d", t)
+			panic(fmt.Errorf("unexpected constant type: %d", t))
 		}
 	}
-	return nil
 }
 
-func readCode(r io.Reader, p *prototype) error {
+func readCode(r io.Reader, p *prototype) {
 	var n uint32
 	var i uint32
 
-	err := binary.Read(r, binary.LittleEndian, &n)
-	if err != nil {
-		return err
+	if err := binary.Read(r, binary.LittleEndian, &n); err != nil {
+		panic(err)
 	}
 	for i = 0; i < n; i++ {
 		var instr types.Instruction
-		err = binary.Read(r, binary.LittleEndian, &instr)
-		if err != nil {
-			return err
+		if err := binary.Read(r, binary.LittleEndian, &instr); err != nil {
+			panic(err)
 		}
 		p.code = append(p.code, instr)
 	}
-	return nil
 }
 
-func readFunction(r io.Reader) (*prototype, error) {
+func readFunction(r io.Reader) *prototype {
 	var fm funcMeta
 	var p prototype
 	var n uint32
 	var i uint32
 
 	// Meta-data about the function
-	err := binary.Read(r, binary.LittleEndian, &fm)
-	if err != nil {
-		return nil, err
+	if err := binary.Read(r, binary.LittleEndian, &fm); err != nil {
+		panic(err)
 	}
 	p.meta = &fm
 
 	// Function's instructions
-	err = readCode(r, &p)
-	if err != nil {
-		return nil, err
-	}
-
+	readCode(r, &p)
 	// Function's constants
-	err = readConstants(r, &p)
-	if err != nil {
-		return nil, err
-	}
-
+	readConstants(r, &p)
 	// Inner function's functions (prototypes)
-	err = binary.Read(r, binary.LittleEndian, &n)
-	if err != nil {
-		return nil, err
+	if err := binary.Read(r, binary.LittleEndian, &n); err != nil {
+		panic(err)
 	}
 	for i = 0; i < n; i++ {
-		var subP *prototype
-		subP, err = readFunction(r)
-		if err != nil {
-			return nil, err
-		}
-		p.protos = append(p.protos, subP)
+		p.protos = append(p.protos, readFunction(r))
 	}
 
 	// Upvalues
-	err = readUpvalues(r, &p)
-	if err != nil {
-		return nil, err
-	}
-
+	readUpvalues(r, &p)
 	// Debug
-	err = readDebug(r, &p)
-	if err != nil {
-		return nil, err
-	}
+	readDebug(r, &p)
 
-	return &p, nil
+	return &p
 }
 
-func readHeader(r io.Reader) (*gHeader, error) {
+func readHeader(r io.Reader) *gHeader {
 	var h gHeader
 
-	err := binary.Read(r, binary.LittleEndian, &h)
-	if err != nil {
-		return nil, err
+	if err := binary.Read(r, binary.LittleEndian, &h); err != nil {
+		panic(err)
 	}
 
 	// Validate header
@@ -373,30 +314,33 @@ func readHeader(r io.Reader) (*gHeader, error) {
 
 	// As a whole
 	if h == *stdH {
-		return &h, nil
+		return &h
 	} else if h.Signature != stdH.Signature {
-		return nil, fmt.Errorf("is not a precompiled chunk")
+		panic(fmt.Errorf("is not a precompiled chunk"))
 	} else if h.Version != stdH.Version {
-		return nil, fmt.Errorf("version mismatch, got %d.%d, expected %d.%d", h.MajorVersion(), h.MinorVersion(), stdH.MajorVersion(), stdH.MinorVersion())
+		panic(fmt.Errorf("version mismatch, got %d.%d, expected %d.%d", h.MajorVersion(), h.MinorVersion(), stdH.MajorVersion(), stdH.MinorVersion()))
 	}
 
-	return nil, fmt.Errorf("incompatible")
+	panic(fmt.Errorf("incompatible"))
 }
 
-func Load(r io.Reader) error {
+func Load(r io.Reader) (err error) {
+	// For simplicity's sake, to avoid multiple if err != nil, use a panic in the
+	// various readXxxx functions, and catch here, since Load() returns as soon as an
+	// error is detected (this is not a compiler).
+	defer func() {
+		if e := recover(); e != nil {
+			err = e.(error)
+		}
+	}()
+
 	// First up, the Header (12 bytes) + LUAC_TAIL to "catch conversion errors", as described in Lua
-	h, err := readHeader(r)
-	if err != nil {
-		return err
-	}
+	h := readHeader(r)
 	fmt.Printf("Header: %+v\n", h)
 
 	// Then, the function header (a prototype)
-	p, err := readFunction(r)
-	if err != nil {
-		return err
-	}
+	p := readFunction(r)
 	fmt.Println(p)
 
-	return nil
+	return
 }

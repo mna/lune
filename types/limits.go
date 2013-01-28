@@ -27,6 +27,8 @@ const (
 // INT_MAX - 2 "for safety"
 // https://groups.google.com/forum/?fromgroups=#!topic/golang-nuts/a9PitPAHSSU
 const (
+	BITRK = (1 << (sizeB - 1)) // this bit 1 means constant (0 means register)
+
 	MAX_INT    = math.MaxInt32 - 2 // TODO : Int32 or int64? Check Lua on Linux 64bit
 	MAXARG_Ax  = ((1 << sizeAx) - 1)
 	MAXARG_Bx  = ((1 << sizeBx) - 1)

@@ -3,10 +3,11 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"strings"
 )
 
 /*
-  Port of lopcodes.h
+  Port of lopcodes.{c,h}
 
   Opcodes for the virtual machine
   See doc.go for copyright notice
@@ -71,10 +72,6 @@ func (i Instruction) GetArgsBx() int {
 	return (i.GetArgBx() - MAXARG_sBx)
 }
 
-const (
-	BITRK = (1 << (sizeB - 1)) // this bit 1 means constant (0 means register)
-)
-
 // test whether value is a constant
 func isK(v int) bool {
 	return (v & BITRK) != 0
@@ -87,60 +84,48 @@ func indexK(v int) int {
 
 func (i Instruction) String() string {
 	var buf bytes.Buffer
+	var a, b, c int
+	var bc [2]bool
 
 	op := i.GetOpCode()
 	om := op.GetOpMode()
 
-	buf.WriteString(fmt.Sprintf("%s\t", op))
-
-	switch om {
-	case MODE_iABC:
-		var a, b, c int
-
-		a = i.GetArgA()
-		buf.WriteString(fmt.Sprintf("%d", a))
-		bm := op.GetBMode()
-		if bm != OpArgN {
-			b = i.GetArgB()
-			if bm == OpArgK && isK(b) {
-				b = -1 - indexK(b)
-			}
-			buf.WriteString(fmt.Sprintf(" %d", b))
-		}
-
-		cm := op.GetCMode()
-		if cm != OpArgN {
-			c = i.GetArgC()
-			if cm == OpArgK && isK(c) {
-				c = -1 - indexK(c)
-			}
-			buf.WriteString(fmt.Sprintf(" %d", c))
-		}
-
-	case MODE_iABx, MODE_iAsBx:
-		var a, b int
-
-		a = i.GetArgA()
-		buf.WriteString(fmt.Sprintf("%d", a))
-
-		bm := op.GetBMode()
-		if bm != OpArgN {
-			if om == MODE_iAsBx {
-				b = i.GetArgsBx()
-			} else {
-				b = i.GetArgBx()
-			}
-			if bm == OpArgK && isK(b) {
-				b = -1 - indexK(b)
-			}
-			buf.WriteString(fmt.Sprintf(" %d", b))
-		}
-
-	case MODE_iAx:
-		var a int
-
+	buf.WriteString(fmt.Sprintf("%s%s", op, strings.Repeat(" ", 20-len(op.String()))))
+	if om == MODE_iAx {
 		a = i.GetArgAx()
-		buf.WriteString(fmt.Sprintf("%d", a))
+	} else {
+		a = i.GetArgA()
+
+		bm := op.GetBMode()
+		if bm != OpArgN {
+			bc[0] = true
+			switch om {
+			case MODE_iABC:
+				b = i.GetArgB()
+				cm := op.GetCMode()
+				if cm != OpArgN {
+					bc[1] = true
+					c = i.GetArgC()
+					if cm == OpArgK && isK(c) {
+						c = -1 - indexK(c)
+					}
+				}
+			case MODE_iABx:
+				b = i.GetArgBx()
+			case MODE_iAsBx:
+				b = i.GetArgsBx()
+			}
+			if bm == OpArgK && isK(b) {
+				b = -1 - indexK(b)
+			}
+		}
+	}
+	buf.WriteString(fmt.Sprintf("%d", a))
+	if bc[0] {
+		buf.WriteString(fmt.Sprintf(" %d", b))
+	}
+	if bc[1] {
+		buf.WriteString(fmt.Sprintf(" %d", c))
 	}
 	return buf.String()
 }
@@ -284,7 +269,7 @@ const (
 	OpArgK                  // Argument is a constant or register/constant
 )
 
-// OpMask defines how the instruction uses its arguments.
+// OpMask defines the behaviour of the instruction.
 type OpMask byte
 
 func createOpMask(tst, regA byte, bArgMode, cArgMode OpArgMask, om OpMode) OpMask {
