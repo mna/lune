@@ -1,6 +1,7 @@
 package serializer
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"github.com/PuerkitoBio/lune/types"
@@ -64,10 +65,46 @@ func NewHeader() *gHeader {
 }
 
 type prototype struct {
-	meta   *funcMeta
-	code   []types.Instruction
-	ks     []types.Value
-	protos []*prototype
+	meta     *funcMeta
+	code     []types.Instruction
+	ks       []types.Value
+	protos   []*prototype
+	upvalues []*upvalue
+
+	// Debug info, unavailable in release build
+	source   string
+	lineInfo []int32
+	locVars  []*locVar
+}
+
+func (p *prototype) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(fmt.Sprintf("%+v\n", p.meta))
+	buf.WriteString(fmt.Sprintln("Instructions (", len(p.code), ") :"))
+	for _, c := range p.code {
+		buf.WriteString(fmt.Sprintln(c))
+	}
+	buf.WriteString(fmt.Sprintln("Constants (", len(p.ks), ") :"))
+	buf.WriteString(fmt.Sprintln(p.ks))
+	buf.WriteString(fmt.Sprintln("Functions (", len(p.protos), ") :"))
+	for _, f := range p.protos {
+		buf.WriteString(fmt.Sprintln(f))
+	}
+	buf.WriteString(fmt.Sprintln("Upvalues (", len(p.upvalues), ") :"))
+	for _, u := range p.upvalues {
+		buf.WriteString(fmt.Sprintf("%+v\n", u))
+	}
+	buf.WriteString("\nDebug information:\n\n")
+	buf.WriteString("Source: " + p.source + "\n")
+	buf.WriteString(fmt.Sprintln("Line info (", len(p.lineInfo), ") :"))
+	buf.WriteString(fmt.Sprintln(p.lineInfo))
+	buf.WriteString(fmt.Sprintln("Local variables (", len(p.locVars), ") :"))
+	for _, lv := range p.locVars {
+		buf.WriteString(fmt.Sprintf("%+v\n", lv))
+	}
+
+	return buf.String()
 }
 
 type funcMeta struct {
@@ -76,6 +113,18 @@ type funcMeta struct {
 	NumParams       byte
 	IsVarArg        byte
 	MaxStackSize    byte
+}
+
+type upvalue struct {
+	name    string
+	instack byte
+	idx     byte
+}
+
+type locVar struct {
+	name    string
+	startpc int
+	endpc   int
 }
 
 func readString(r io.Reader) (string, error) {
@@ -87,7 +136,6 @@ func readString(r io.Reader) (string, error) {
 		return "", err
 	}
 	if sz > 0 {
-		fmt.Println("sz= ", sz)
 		ch := make([]byte, sz)
 		err = binary.Read(r, binary.LittleEndian, ch)
 		if err != nil {
@@ -99,6 +147,88 @@ func readString(r io.Reader) (string, error) {
 	return s, nil
 }
 
+func readDebug(r io.Reader, p *prototype) error {
+	var n uint32
+	var i uint32
+	var err error
+
+	// Source file name
+	p.source, err = readString(r)
+	if err != nil {
+		return err
+	}
+
+	// Line numbers
+	err = binary.Read(r, binary.LittleEndian, &n)
+	if err != nil {
+		return err
+	}
+	for i = 0; i < n; i++ {
+		var li int32
+		err = binary.Read(r, binary.LittleEndian, &li)
+		if err != nil {
+			return err
+		}
+		p.lineInfo = append(p.lineInfo, li)
+	}
+
+	// Local variables
+	err = binary.Read(r, binary.LittleEndian, &n)
+	if err != nil {
+		return err
+	}
+	for i = 0; i < n; i++ {
+		var lv locVar
+		lv.name, err = readString(r)
+		if err != nil {
+			return err
+		}
+		err = binary.Read(r, binary.LittleEndian, &lv.startpc)
+		if err != nil {
+			return err
+		}
+		err = binary.Read(r, binary.LittleEndian, &lv.endpc)
+		if err != nil {
+			return err
+		}
+		p.locVars = append(p.locVars, &lv)
+	}
+
+	// Upvalue names
+	err = binary.Read(r, binary.LittleEndian, &n)
+	if err != nil {
+		return err
+	}
+	for i = 0; i < n; i++ {
+		p.upvalues[i].name, err = readString(r)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func readUpvalues(r io.Reader, p *prototype) error {
+	var n uint32
+	var i uint32
+
+	err := binary.Read(r, binary.LittleEndian, &n)
+	if err != nil {
+		return err
+	}
+	for i = 0; i < n; i++ {
+		var ba [2]byte
+		err = binary.Read(r, binary.LittleEndian, &ba)
+		if err != nil {
+			return err
+		}
+		p.upvalues = append(p.upvalues, &upvalue{"", ba[0], ba[1]})
+	}
+
+	return nil
+}
+
 func readConstants(r io.Reader, p *prototype) error {
 	var n uint32
 	var i uint32
@@ -107,7 +237,6 @@ func readConstants(r io.Reader, p *prototype) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Number of constants: %d\n", n)
 
 	for i = 0; i < n; i++ {
 		// Read the constant's type, 1 byte
@@ -166,7 +295,6 @@ func readCode(r io.Reader, p *prototype) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Number of instructions: %d\n", n)
 	for i = 0; i < n; i++ {
 		var instr types.Instruction
 		err = binary.Read(r, binary.LittleEndian, &instr)
@@ -190,7 +318,6 @@ func readFunction(r io.Reader) (*prototype, error) {
 		return nil, err
 	}
 	p.meta = &fm
-	fmt.Printf("Function meta: %+v\n", fm)
 
 	// Function's instructions
 	err = readCode(r, &p)
@@ -218,6 +345,18 @@ func readFunction(r io.Reader) (*prototype, error) {
 		p.protos = append(p.protos, subP)
 	}
 
+	// Upvalues
+	err = readUpvalues(r, &p)
+	if err != nil {
+		return nil, err
+	}
+
+	// Debug
+	err = readDebug(r, &p)
+	if err != nil {
+		return nil, err
+	}
+
 	return &p, nil
 }
 
@@ -231,8 +370,6 @@ func readHeader(r io.Reader) (*gHeader, error) {
 
 	// Validate header
 	stdH := NewHeader()
-	fmt.Printf("h: %v\n", h)
-	fmt.Printf("stdH: %v\n", *stdH)
 
 	// As a whole
 	if h == *stdH {
@@ -259,17 +396,7 @@ func Load(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Prototype: %+v\n", p)
+	fmt.Println(p)
 
-	for _, i := range p.code {
-		fmt.Println(i)
-	}
-	/*
-		s, err := readString(r)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("String: %s\n", s)
-	*/
 	return nil
 }
