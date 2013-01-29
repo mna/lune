@@ -238,7 +238,6 @@ func readConstants(r io.Reader, p *prototype) {
 			}
 			p.ks = append(p.ks, v)
 		case types.TNUMBER:
-			// TODO : A number is a double in Lua, will a read in a float64 work?
 			var f float64
 			var v types.Value
 			if err := binary.Read(r, binary.LittleEndian, &f); err != nil {
