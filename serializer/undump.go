@@ -64,43 +64,43 @@ func NewHeader() *gHeader {
 	}
 }
 
-type prototype struct {
-	meta     *funcMeta
-	code     []types.Instruction
-	ks       []types.Value
-	protos   []*prototype
-	upvalues []*upvalue
+type Prototype struct {
+	Meta     *funcMeta
+	Code     []types.Instruction
+	Ks       []types.Value
+	Protos   []*Prototype
+	Upvalues []*upvalue
 
 	// Debug info, unavailable in release build
-	source   string
-	lineInfo []int32
-	locVars  []*locVar
+	Source   string
+	LineInfo []int32
+	LocVars  []*locVar
 }
 
-func (p *prototype) String() string {
+func (p *Prototype) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(fmt.Sprintf("%+v\n", p.meta))
-	buf.WriteString(fmt.Sprintln("Instructions (", len(p.code), ") :"))
-	for _, c := range p.code {
+	buf.WriteString(fmt.Sprintf("%+v\n", p.Meta))
+	buf.WriteString(fmt.Sprintln("Instructions (", len(p.Code), ") :"))
+	for _, c := range p.Code {
 		buf.WriteString(fmt.Sprintln(c))
 	}
-	buf.WriteString(fmt.Sprintln("Constants (", len(p.ks), ") :"))
-	buf.WriteString(fmt.Sprintln(p.ks))
-	buf.WriteString(fmt.Sprintln("Functions (", len(p.protos), ") :"))
-	for _, f := range p.protos {
+	buf.WriteString(fmt.Sprintln("Constants (", len(p.Ks), ") :"))
+	buf.WriteString(fmt.Sprintln(p.Ks))
+	buf.WriteString(fmt.Sprintln("Functions (", len(p.Protos), ") :"))
+	for _, f := range p.Protos {
 		buf.WriteString(fmt.Sprintln(f))
 	}
-	buf.WriteString(fmt.Sprintln("Upvalues (", len(p.upvalues), ") :"))
-	for _, u := range p.upvalues {
+	buf.WriteString(fmt.Sprintln("Upvalues (", len(p.Upvalues), ") :"))
+	for _, u := range p.Upvalues {
 		buf.WriteString(fmt.Sprintf("%+v\n", u))
 	}
 	buf.WriteString("\nDebug information:\n\n")
-	buf.WriteString("Source: " + p.source + "\n")
-	buf.WriteString(fmt.Sprintln("Line info (", len(p.lineInfo), ") :"))
-	buf.WriteString(fmt.Sprintln(p.lineInfo))
-	buf.WriteString(fmt.Sprintln("Local variables (", len(p.locVars), ") :"))
-	for _, lv := range p.locVars {
+	buf.WriteString("Source: " + p.Source + "\n")
+	buf.WriteString(fmt.Sprintln("Line info (", len(p.LineInfo), ") :"))
+	buf.WriteString(fmt.Sprintln(p.LineInfo))
+	buf.WriteString(fmt.Sprintln("Local variables (", len(p.LocVars), ") :"))
+	for _, lv := range p.LocVars {
 		buf.WriteString(fmt.Sprintf("%+v\n", lv))
 	}
 
@@ -145,12 +145,12 @@ func readString(r io.Reader) string {
 	return s
 }
 
-func readDebug(r io.Reader, p *prototype) {
+func readDebug(r io.Reader, p *Prototype) {
 	var n uint32
 	var i uint32
 
 	// Source file name
-	p.source = readString(r)
+	p.Source = readString(r)
 
 	// Line numbers
 	if err := binary.Read(r, binary.LittleEndian, &n); err != nil {
@@ -161,7 +161,7 @@ func readDebug(r io.Reader, p *prototype) {
 		if err := binary.Read(r, binary.LittleEndian, &li); err != nil {
 			panic(err)
 		}
-		p.lineInfo = append(p.lineInfo, li)
+		p.LineInfo = append(p.LineInfo, li)
 	}
 
 	// Local variables
@@ -178,7 +178,7 @@ func readDebug(r io.Reader, p *prototype) {
 		if err := binary.Read(r, binary.LittleEndian, &lv.endpc); err != nil {
 			panic(err)
 		}
-		p.locVars = append(p.locVars, &lv)
+		p.LocVars = append(p.LocVars, &lv)
 	}
 
 	// Upvalue names
@@ -186,11 +186,11 @@ func readDebug(r io.Reader, p *prototype) {
 		panic(err)
 	}
 	for i = 0; i < n; i++ {
-		p.upvalues[i].name = readString(r)
+		p.Upvalues[i].name = readString(r)
 	}
 }
 
-func readUpvalues(r io.Reader, p *prototype) {
+func readUpvalues(r io.Reader, p *Prototype) {
 	var n uint32
 	var i uint32
 
@@ -202,11 +202,11 @@ func readUpvalues(r io.Reader, p *prototype) {
 		if err := binary.Read(r, binary.LittleEndian, &ba); err != nil {
 			panic(err)
 		}
-		p.upvalues = append(p.upvalues, &upvalue{"", ba[0], ba[1]})
+		p.Upvalues = append(p.Upvalues, &upvalue{"", ba[0], ba[1]})
 	}
 }
 
-func readConstants(r io.Reader, p *prototype) {
+func readConstants(r io.Reader, p *Prototype) {
 	var n uint32
 	var i uint32
 
@@ -223,7 +223,7 @@ func readConstants(r io.Reader, p *prototype) {
 		switch types.ValType(t) {
 		case types.TNIL:
 			var v types.Value = nil
-			p.ks = append(p.ks, v)
+			p.Ks = append(p.Ks, v)
 		case types.TBOOL:
 			var v types.Value
 			if err := binary.Read(r, binary.LittleEndian, &t); err != nil {
@@ -236,7 +236,7 @@ func readConstants(r io.Reader, p *prototype) {
 			} else {
 				panic(fmt.Errorf("invalid value for boolean: %d", t))
 			}
-			p.ks = append(p.ks, v)
+			p.Ks = append(p.Ks, v)
 		case types.TNUMBER:
 			var f float64
 			var v types.Value
@@ -244,16 +244,16 @@ func readConstants(r io.Reader, p *prototype) {
 				panic(err)
 			}
 			v = f
-			p.ks = append(p.ks, v)
+			p.Ks = append(p.Ks, v)
 		case types.TSTRING:
-			p.ks = append(p.ks, readString(r))
+			p.Ks = append(p.Ks, readString(r))
 		default:
 			panic(fmt.Errorf("unexpected constant type: %d", t))
 		}
 	}
 }
 
-func readCode(r io.Reader, p *prototype) {
+func readCode(r io.Reader, p *Prototype) {
 	var n uint32
 	var i uint32
 
@@ -265,13 +265,13 @@ func readCode(r io.Reader, p *prototype) {
 		if err := binary.Read(r, binary.LittleEndian, &instr); err != nil {
 			panic(err)
 		}
-		p.code = append(p.code, instr)
+		p.Code = append(p.Code, instr)
 	}
 }
 
-func readFunction(r io.Reader) *prototype {
+func readFunction(r io.Reader) *Prototype {
 	var fm funcMeta
-	var p prototype
+	var p Prototype
 	var n uint32
 	var i uint32
 
@@ -279,7 +279,7 @@ func readFunction(r io.Reader) *prototype {
 	if err := binary.Read(r, binary.LittleEndian, &fm); err != nil {
 		panic(err)
 	}
-	p.meta = &fm
+	p.Meta = &fm
 
 	// Function's instructions
 	readCode(r, &p)
@@ -290,7 +290,7 @@ func readFunction(r io.Reader) *prototype {
 		panic(err)
 	}
 	for i = 0; i < n; i++ {
-		p.protos = append(p.protos, readFunction(r))
+		p.Protos = append(p.Protos, readFunction(r))
 	}
 
 	// Upvalues

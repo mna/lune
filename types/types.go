@@ -25,13 +25,22 @@ const (
   bool:     value is bool
   number:   value is float64 or float32 based on GOARCH?
   string:   value is int, the index to the string table value
-  function: value is int, the index to ?
+  function: value is *Prototype
   table:    ..
   thread:   ..
   userdata: ..
 */
 type Value interface{}
 
+type CallInfo struct {
+	FuncIndex  int
+	NumResults int
+	CallStatus byte
+	PC         int
+	Base       int
+}
+
+/*
 type table struct {
 	m map[Value]Value
 	a []Value
@@ -62,3 +71,4 @@ type stack struct {
 func newStack() *stack {
 	return &stack{}
 }
+*/
