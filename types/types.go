@@ -40,6 +40,17 @@ type CallInfo struct {
 	Base       int
 }
 
+// Naive implementation for now: always a map, no array optimization
+type Table map[*Value]*Value
+
+func (t *Table) Set(k *Value, v *Value) {
+	t[k] = v
+}
+
+func (t *Table) Get(k *Value) *Value {
+	return t[k]
+}
+
 /*
 type table struct {
 	m map[Value]Value

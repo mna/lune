@@ -8,7 +8,7 @@ import (
 func prepareFunction(s *State, fIdx int) (*serializer.Prototype, *types.CallInfo) {
 	// Get the function's prototype at this stack index
 	f := s.Get(fIdx)
-	p := f.(*serializer.Prototype)
+	p := (*f).(*serializer.Prototype)
 
 	// Make sure the stack has enough slots
 	s.checkStack(p.Meta.MaxStackSize)
@@ -57,8 +57,8 @@ func prepareFunction(s *State, fIdx int) (*serializer.Prototype, *types.CallInfo
 }
 
 func Execute(s *State) {
-	// Start with entry point (position 0)
-	p, ci := prepareFunction(s, 0)
+	// Start with entry point (position 1)
+	p, ci := prepareFunction(s, 1)
 
 newFrame:
 	for {
@@ -68,8 +68,15 @@ newFrame:
 
 		switch i.GetOpCode() {
 		case types.OP_SETTABUP:
-      int a = GETARG_A(i);
-      Protect(luaV_settable(L, cl->upvals[a]->v, RKB(i), RKC(i)));
+			// In "upvalue" opcodes, the "A" refers to the index within the upvalues!
+			// Which is probably why it doesn't use the "ra" variable (relative to base).
+			a := i.GetArgA()
+			// TODO : If isK, indexK...
+			b := ci.Base + i.GetArgB()
+			setTable(s, a)
+
+			//int a = GETARG_A(i);
+			//Protect(luaV_settable(L, cl->upvals[a]->v, RKB(i), RKC(i)));
 		}
 
 	}
