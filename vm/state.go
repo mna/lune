@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"github.com/PuerkitoBio/lune/serializer"
 	"github.com/PuerkitoBio/lune/types"
 )
 
@@ -34,11 +33,11 @@ func (s *State) checkStack(needed byte) {
 	}
 }
 
-func NewState(entryPoint *serializer.Prototype) *State {
+func NewState(entryPoint *types.Prototype) *State {
 	s := &State{new(Stack)}
 
 	// TODO : For now, Index 0 is always the Global's table, probably more complex than this if the index is relative to base of the function
-	s.push(new(Table))
+	s.push(new(types.Table))
 	// Index 1
 	s.push(entryPoint)
 	return s

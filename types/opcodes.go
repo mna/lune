@@ -52,15 +52,42 @@ func (i Instruction) GetArgA() int {
 	return getArg(i, posA, sizeA)
 }
 
-func (i Instruction) GetArgB() int {
+func getArgPossibleK(i Instruction, argNm byte, pos, size uint) int {
+	var md OpArgMask
+
+	arg := getArg(i, pos, size)
+	op := i.GetOpCode()
+	if argNm == 'B' {
+		md = op.GetBMode()
+	} else {
+		md = op.GetCMode()
+	}
+	if md == OpArgK && isK(arg) {
+		arg = indexK(arg)
+	} else if md == OpArgN {
+		panic(fmt.Sprintf("unexpected use of %s in operator %s", argNm, op))
+	}
+	return arg
+}
+
+func (i Instruction) GetArgB(getK bool) int {
+	if getK {
+		return getArgPossibleK(i, 'B', posB, sizeB)
+	}
 	return getArg(i, posB, sizeB)
 }
 
-func (i Instruction) GetArgC() int {
+func (i Instruction) GetArgC(getK bool) int {
+	if getK {
+		return getArgPossibleK(i, 'C', posC, sizeC)
+	}
 	return getArg(i, posC, sizeC)
 }
 
-func (i Instruction) GetArgBx() int {
+func (i Instruction) GetArgBx(getK bool) int {
+	if getK {
+		return getArgPossibleK(i, 'B', posBx, sizeBx)
+	}
 	return getArg(i, posBx, sizeBx)
 }
 
@@ -69,7 +96,7 @@ func (i Instruction) GetArgAx() int {
 }
 
 func (i Instruction) GetArgsBx() int {
-	return (i.GetArgBx() - MAXARG_sBx)
+	return (i.GetArgBx(false) - MAXARG_sBx)
 }
 
 // test whether value is a constant
@@ -101,17 +128,17 @@ func (i Instruction) String() string {
 			bc[0] = true
 			switch om {
 			case MODE_iABC:
-				b = i.GetArgB()
+				b = i.GetArgB(false)
 				cm := op.GetCMode()
 				if cm != OpArgN {
 					bc[1] = true
-					c = i.GetArgC()
+					c = i.GetArgC(false)
 					if cm == OpArgK && isK(c) {
 						c = -1 - indexK(c)
 					}
 				}
 			case MODE_iABx:
-				b = i.GetArgBx()
+				b = i.GetArgBx(false)
 			case MODE_iAsBx:
 				b = i.GetArgsBx()
 			}

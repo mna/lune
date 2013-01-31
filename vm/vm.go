@@ -1,14 +1,13 @@
 package vm
 
 import (
-	"github.com/PuerkitoBio/lune/serializer"
 	"github.com/PuerkitoBio/lune/types"
 )
 
-func prepareFunction(s *State, fIdx int) (*serializer.Prototype, *types.CallInfo) {
+func prepareFunction(s *State, fIdx int) (*types.Prototype, *types.CallInfo) {
 	// Get the function's prototype at this stack index
 	f := s.Get(fIdx)
-	p := (*f).(*serializer.Prototype)
+	p := (*f).(*types.Prototype)
 
 	// Make sure the stack has enough slots
 	s.checkStack(p.Meta.MaxStackSize)
@@ -71,9 +70,8 @@ newFrame:
 			// In "upvalue" opcodes, the "A" refers to the index within the upvalues!
 			// Which is probably why it doesn't use the "ra" variable (relative to base).
 			a := i.GetArgA()
-			// TODO : If isK, indexK...
-			b := ci.Base + i.GetArgB()
-			setTable(s, a)
+			b := ci.Base + i.GetArgB(true)
+			//setTable(s, a)
 
 			//int a = GETARG_A(i);
 			//Protect(luaV_settable(L, cl->upvals[a]->v, RKB(i), RKC(i)));
