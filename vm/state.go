@@ -13,7 +13,8 @@ type Stack struct {
 }
 
 type State struct {
-	stack *Stack
+	stack   *Stack
+	globals types.Table
 }
 
 func (s *State) Get(idx int) *types.Value {
@@ -35,10 +36,16 @@ func (s *State) checkStack(needed byte) {
 
 func NewState(entryPoint *types.Prototype) *State {
 	s := &State{new(Stack)}
+	s.globals = new(types.Table)
 
-	// TODO : For now, Index 0 is always the Global's table, probably more complex than this if the index is relative to base of the function
-	s.push(new(types.Table))
-	// Index 1
+	if l := len(entryPoint.Upvalues); l == 1 {
+		// 1 upvalue = globals table as upvalue
+	} else if l > 1 {
+		// TODO : panic?
+		panic("too many upvalues expected for entry point")
+	}
+
+	// Push on the stack
 	s.push(entryPoint)
 	return s
 }

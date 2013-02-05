@@ -260,7 +260,7 @@ func readHeader(r io.Reader) *gHeader {
 	panic(fmt.Errorf("incompatible"))
 }
 
-func Load(r io.Reader) (err error) {
+func Load(r io.Reader) (p *types.Prototype, err error) {
 	// For simplicity's sake, to avoid multiple if err != nil, use a panic in the
 	// various readXxxx functions, and catch here, since Load() returns as soon as an
 	// error is detected (this is not a compiler).
@@ -275,7 +275,7 @@ func Load(r io.Reader) (err error) {
 	fmt.Printf("Header: %+v\n", h)
 
 	// Then, the function header (a prototype)
-	p := readFunction(r)
+	p = readFunction(r)
 	fmt.Println(p)
 
 	return
