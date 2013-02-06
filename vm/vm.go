@@ -25,8 +25,9 @@ newFrame:
 
 		i := ci.Cl.P.Code[ci.PC]
 		ci.PC++
-		//ra := ci.Base + i.GetArgA()
+		ra := getVal(i.GetArgA(), false, false)
 
+		s.stack.dumpStack()
 		switch i.GetOpCode() {
 		case types.OP_SETTABUP:
 			// In "upvalue" opcodes, the "A" refers to the index within the upvalues!
@@ -38,7 +39,27 @@ newFrame:
 			c := getVal(vx, vk, false)
 
 			(*a).(types.Table)[b] = c
-			fmt.Printf("%s : k=%v v=%v\n", i.GetOpCode(), b, c)
+			fmt.Printf("%s : k=%v v=%v\n", i.GetOpCode(), *b, *c)
+
+		case types.OP_GETTABUP:
+			vx, _ = i.GetArgB(false)
+			b := getVal(vx, false, true)
+			vx, vk = i.GetArgC(true)
+			c := getVal(vx, vk, false)
+			t := (*b).(types.Table)
+			ra = t[c]
+			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, *(t[c]), *ra)
+
+		case types.OP_MUL:
+			vx, vk = i.GetArgB(true)
+			b := getVal(vx, vk, false)
+			vx, vk = i.GetArgC(true)
+			c := getVal(vx, vk, false)
+			bf := (*b).(float64)
+			cf := (*c).(float64)
+			*ra = bf * cf
+			fmt.Printf("%s : b=%v * c=%v = ra=%v\n", i.GetOpCode(), *b, *c, *ra)
+
 		case types.OP_CALL:
 			goto newFrame
 		default:

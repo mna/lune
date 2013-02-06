@@ -79,7 +79,9 @@ func (p *Prototype) String() string {
 		buf.WriteString(fmt.Sprintln(c))
 	}
 	buf.WriteString(fmt.Sprintln("Constants (", len(p.Ks), ") :"))
-	buf.WriteString(fmt.Sprintln(p.Ks))
+	for _, v := range p.Ks {
+		buf.WriteString(fmt.Sprintf("%+v\n", *v))
+	}
 	buf.WriteString(fmt.Sprintln("Functions (", len(p.Protos), ") :"))
 	for _, f := range p.Protos {
 		buf.WriteString(fmt.Sprintln(f))

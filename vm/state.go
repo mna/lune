@@ -1,11 +1,12 @@
 package vm
 
 import (
+	"fmt"
 	"github.com/PuerkitoBio/lune/types"
 )
 
 const (
-	_INITIAL_STACK_CAPACITY = 10
+	_INITIAL_STACK_CAPACITY = 2
 )
 
 // Holds pointers to values (pointer to empty interface - yes, I know, but it is 
@@ -40,6 +41,17 @@ func (s *Stack) checkStack(needed byte) {
 	if missing > 0 {
 		dummy := make([]*types.Value, missing)
 		s.stk = append(s.stk, dummy...)
+	}
+}
+
+func (s *Stack) dumpStack() {
+	fmt.Println("*** DUMP STACK ***")
+	for i, v := range s.stk {
+		if v == nil {
+			fmt.Println(i, v)
+		} else {
+			fmt.Println(i, *v)
+		}
 	}
 }
 
