@@ -42,19 +42,8 @@ type Closure struct {
 	UpVals []*Value
 }
 
-func NewClosure(s *State, p *Prototype) *Closure {
-	cl := &Closure{p, make([]*Value, len(p.Upvalues))}
-	for i, u := range p.Upvalues {
-
-	}
-}
-
-type CallInfo struct {
-	FuncIndex  int
-	NumResults int
-	CallStatus byte
-	PC         int
-	Base       int
+func NewClosure(p *Prototype) *Closure {
+	return &Closure{p, make([]*Value, len(p.Upvalues))}
 }
 
 // Naive implementation for now: always a map, no array optimization

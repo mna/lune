@@ -1,80 +1,48 @@
 package vm
 
 import (
+	"fmt"
 	"github.com/PuerkitoBio/lune/types"
 )
 
-func prepareFunction(s *State, fIdx int) (*types.Prototype, *types.CallInfo) {
-	// Get the function's prototype at this stack index
-	f := s.Get(fIdx)
-	p := (*f).(*types.Prototype)
-
-	// Make sure the stack has enough slots
-	s.checkStack(p.Meta.MaxStackSize)
-
-	// Complete the arguments
-	n := s.stack.top - fIdx - 1
-	for ; n < int(p.Meta.NumParams); n++ {
-		s.push(nil)
-	}
-
-	ci := new(types.CallInfo)
-	ci.FuncIndex = fIdx
-	ci.NumResults = 0 // TODO : For now, ignore, someday will be passed
-	ci.CallStatus = 0 // TODO : For now, ignore
-	ci.PC = 0
-	ci.Base = fIdx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday
-
-	return p, ci
-
-	// TODO : Var arg processing
-
-	/*
-	   case LUA_TLCL: {  // Lua function: prepare its call 
-	     StkId base;
-	     Proto *p = clLvalue(func)->p;
-	     luaD_checkstack(L, p->maxstacksize);
-	     func = restorestack(L, funcr);
-	     n = cast_int(L->top - func) - 1;  // number of real arguments
-	     for (; n < p->numparams; n++)
-	       setnilvalue(L->top++);  // complete missing arguments
-	     base = (!p->is_vararg) ? func + 1 : adjust_varargs(L, p, n);
-	     ci = next_ci(L);  // now 'enter' new function
-	     ci->nresults = nresults;
-	     ci->func = func;
-	     ci->u.l.base = base;
-	     ci->top = base + p->maxstacksize;
-	     lua_assert(ci->top <= L->stack_last);
-	     ci->u.l.savedpc = p->code;  // starting point
-	     ci->callstatus = CIST_LUA;
-	     L->top = ci->top;
-	     if (L->hookmask & LUA_MASKCALL)
-	       callhook(L, ci);
-	     return 0;
-	   }
-	*/
-}
-
 func Execute(s *State) {
-	// Start with entry point (position 1)
-	p, ci := prepareFunction(s, 1)
+	// Start with entry point (position 0)
+	ci := newCallInfo(s, 0)
 
 newFrame:
+	getVal := func(idx int, isK bool, isUpval bool) *types.Value {
+		if isUpval {
+			return ci.Cl.UpVals[idx]
+		} else if isK {
+			return ci.Cl.P.Ks[idx]
+		}
+		return s.stack.Get(ci.Base + idx)
+	}
+
 	for {
-		i := p.Code[ci.PC]
+		var vx int
+		var vk bool
+
+		i := ci.Cl.P.Code[ci.PC]
 		ci.PC++
-		ra := ci.Base + i.GetArgA()
+		//ra := ci.Base + i.GetArgA()
 
 		switch i.GetOpCode() {
 		case types.OP_SETTABUP:
 			// In "upvalue" opcodes, the "A" refers to the index within the upvalues!
 			// Which is probably why it doesn't use the "ra" variable (relative to base).
-			a := i.GetArgA()
-			b := ci.Base + i.GetArgB(true)
-			//setTable(s, a)
+			a := getVal(i.GetArgA(), false, true)
+			vx, vk = i.GetArgB(true)
+			b := getVal(vx, vk, false)
+			vx, vk = i.GetArgC(true)
+			c := getVal(vx, vk, false)
 
-			//int a = GETARG_A(i);
-			//Protect(luaV_settable(L, cl->upvals[a]->v, RKB(i), RKC(i)));
+			(*a).(types.Table)[b] = c
+			fmt.Printf("%s : k=%v v=%v\n", i.GetOpCode(), b, c)
+		case types.OP_CALL:
+			goto newFrame
+		default:
+			fmt.Printf("Ignore %s\n", i.GetOpCode())
 		}
 
 	}
