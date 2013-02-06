@@ -5,10 +5,6 @@ import (
 	"github.com/PuerkitoBio/lune/types"
 )
 
-const (
-	_INITIAL_STACK_CAPACITY = 2
-)
-
 // Holds pointers to values (pointer to empty interface - yes, I know, but it is 
 // required because the interface may hold the value inline for numbers and bools):
 // http://play.golang.org/p/e2Ptu8puSZ
@@ -18,7 +14,7 @@ type Stack struct {
 }
 
 func newStack() *Stack {
-	return &Stack{0, make([]*types.Value, _INITIAL_STACK_CAPACITY)}
+	return new(Stack)
 }
 
 type State struct {
@@ -35,12 +31,12 @@ func (s *Stack) push(v types.Value) {
 	s.top++
 }
 
-// TODO : Required?
 func (s *Stack) checkStack(needed byte) {
-	missing := cap(s.stk) - (s.top + int(needed) + 1) // i.e. cap=10, top=7 and is last used - so 8 slots taken, needed=3: 10-(7 + 3 + 1)
-	if missing > 0 {
-		dummy := make([]*types.Value, missing)
-		s.stk = append(s.stk, dummy...)
+	missing := (s.top + int(needed) - 1) - cap(s.stk)
+	for i := 0; i < missing; i++ {
+		var v types.Value
+		v = nil
+		s.stk = append(s.stk, &v)
 	}
 }
 
@@ -49,6 +45,8 @@ func (s *Stack) dumpStack() {
 	for i, v := range s.stk {
 		if v == nil {
 			fmt.Println(i, v)
+		} else if f, ok := (*v).(*types.Closure); ok {
+			fmt.Println(i, f.P.Source, f.P.Meta.LineDefined)
 		} else {
 			fmt.Println(i, *v)
 		}
@@ -69,6 +67,7 @@ func NewState(entryPoint *types.Prototype) *State {
 	}
 
 	// Push the closure on the stack
+	s.stack.checkStack(cl.P.Meta.MaxStackSize)
 	s.stack.push(cl)
 	return s
 }
@@ -80,9 +79,10 @@ type CallInfo struct {
 	CallStatus byte
 	PC         int
 	Base       int
+	Prev       *CallInfo
 }
 
-func newCallInfo(s *State, fIdx int) *CallInfo {
+func newCallInfo(s *State, fIdx int, prev *CallInfo) *CallInfo {
 	// Get the function's closure at this stack index
 	f := s.stack.Get(fIdx)
 	cl := (*f).(*types.Closure)
@@ -103,6 +103,7 @@ func newCallInfo(s *State, fIdx int) *CallInfo {
 	ci.CallStatus = 0 // TODO : For now, ignore
 	ci.PC = 0
 	ci.Base = fIdx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday
+	ci.Prev = prev
 
 	return ci
 }

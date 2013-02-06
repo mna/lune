@@ -7,7 +7,7 @@ import (
 
 func Execute(s *State) {
 	// Start with entry point (position 0)
-	ci := newCallInfo(s, 0)
+	ci := newCallInfo(s, 0, nil)
 
 newFrame:
 	getVal := func(idx int, isK bool, isUpval bool) *types.Value {
@@ -47,7 +47,7 @@ newFrame:
 			vx, vk = i.GetArgC(true)
 			c := getVal(vx, vk, false)
 			t := (*b).(types.Table)
-			ra = t[c]
+			*ra = *(t[c])
 			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, *(t[c]), *ra)
 
 		case types.OP_MUL:
@@ -58,10 +58,14 @@ newFrame:
 			bf := (*b).(float64)
 			cf := (*c).(float64)
 			*ra = bf * cf
-			fmt.Printf("%s : b=%v * c=%v = ra=%v\n", i.GetOpCode(), *b, *c, *ra)
+			fmt.Printf("%s : b=%v * c=%v = ra=%v\n", i.GetOpCode(), bf, cf, *ra)
 
-		case types.OP_CALL:
+		case types.OP_RETURN:
+			if ci = ci.Prev; ci == nil {
+				return
+			}
 			goto newFrame
+
 		default:
 			fmt.Printf("Ignore %s\n", i.GetOpCode())
 		}
