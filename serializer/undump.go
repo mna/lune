@@ -264,11 +264,11 @@ func Load(r io.Reader) (p *types.Prototype, err error) {
 	// For simplicity's sake, to avoid multiple if err != nil, use a panic in the
 	// various readXxxx functions, and catch here, since Load() returns as soon as an
 	// error is detected (this is not a compiler).
-	defer func() {
+	/*defer func() {
 		if e := recover(); e != nil {
 			err = e.(error)
 		}
-	}()
+	}()*/
 
 	// First up, the Header (12 bytes) + LUAC_TAIL to "catch conversion errors", as described in Lua
 	h := readHeader(r)

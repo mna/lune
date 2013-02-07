@@ -118,8 +118,8 @@ type Upvalue struct {
 
 type LocVar struct {
 	Name    string
-	Startpc int
-	Endpc   int
+	Startpc uint32
+	Endpc   uint32
 }
 
 /*
