@@ -16,7 +16,7 @@ newFrame:
 		} else if isK {
 			return ci.Cl.P.Ks[idx]
 		}
-		return s.stack.Get(ci.Base + idx)
+		return s.Stack.Get(ci.Base + idx)
 	}
 
 	for {
@@ -27,8 +27,14 @@ newFrame:
 		ci.PC++
 		ra := getVal(i.GetArgA(), false, false)
 
-		s.stack.dumpStack()
+		s.Stack.dumpStack()
 		switch i.GetOpCode() {
+		case types.OP_LOADK:
+			vx, _ = i.GetArgBx(false)
+			b := getVal(vx, true, false)
+			*ra = *b
+			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *ra, *b)
+
 		case types.OP_SETTABUP:
 			// In "upvalue" opcodes, the "A" refers to the index within the upvalues!
 			// Which is probably why it doesn't use the "ra" variable (relative to base).

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/PuerkitoBio/lune/serializer"
+	"github.com/PuerkitoBio/lune/stdlib"
 	"github.com/PuerkitoBio/lune/vm"
 	"os"
 )
@@ -27,5 +28,6 @@ func main() {
 	}
 
 	s := vm.NewState(p)
+	stdlib.OpenLibs(s.Globals)
 	vm.Execute(s)
 }

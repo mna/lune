@@ -18,8 +18,8 @@ func newStack() *Stack {
 }
 
 type State struct {
-	stack   *Stack
-	globals types.Table
+	Stack   *Stack
+	Globals types.Table
 }
 
 func (s *Stack) Get(idx int) *types.Value {
@@ -59,7 +59,7 @@ func NewState(entryPoint *types.Prototype) *State {
 	cl := types.NewClosure(entryPoint)
 	if l := len(entryPoint.Upvalues); l == 1 {
 		// 1 upvalue = globals table as upvalue
-		v := types.Value(s.globals)
+		v := types.Value(s.Globals)
 		cl.UpVals[0] = &v
 	} else if l > 1 {
 		// TODO : panic?
@@ -67,8 +67,8 @@ func NewState(entryPoint *types.Prototype) *State {
 	}
 
 	// Push the closure on the stack
-	s.stack.checkStack(cl.P.Meta.MaxStackSize)
-	s.stack.push(cl)
+	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
+	s.Stack.push(cl)
 	return s
 }
 
@@ -84,16 +84,16 @@ type CallInfo struct {
 
 func newCallInfo(s *State, fIdx int, prev *CallInfo) *CallInfo {
 	// Get the function's closure at this stack index
-	f := s.stack.Get(fIdx)
+	f := s.Stack.Get(fIdx)
 	cl := (*f).(*types.Closure)
 
 	// Make sure the stack has enough slots
-	s.stack.checkStack(cl.P.Meta.MaxStackSize)
+	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
 
 	// Complete the arguments
-	n := s.stack.top - fIdx - 1
+	n := s.Stack.top - fIdx - 1
 	for ; n < int(cl.P.Meta.NumParams); n++ {
-		s.stack.push(nil)
+		s.Stack.push(nil)
 	}
 
 	ci := new(CallInfo)
