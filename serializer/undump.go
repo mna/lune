@@ -159,7 +159,7 @@ func readConstants(r io.Reader, p *types.Prototype) {
 		switch types.ValType(t) {
 		case types.TNIL:
 			var v types.Value = nil
-			p.Ks = append(p.Ks, &v)
+			p.Ks = append(p.Ks, v)
 		case types.TBOOL:
 			var v types.Value
 			if err := binary.Read(r, binary.LittleEndian, &t); err != nil {
@@ -172,7 +172,7 @@ func readConstants(r io.Reader, p *types.Prototype) {
 			} else {
 				panic(fmt.Errorf("invalid value for boolean: %d", t))
 			}
-			p.Ks = append(p.Ks, &v)
+			p.Ks = append(p.Ks, v)
 		case types.TNUMBER:
 			var f float64
 			var v types.Value
@@ -180,10 +180,10 @@ func readConstants(r io.Reader, p *types.Prototype) {
 				panic(err)
 			}
 			v = f
-			p.Ks = append(p.Ks, &v)
+			p.Ks = append(p.Ks, v)
 		case types.TSTRING:
 			var v types.Value = readString(r)
-			p.Ks = append(p.Ks, &v)
+			p.Ks = append(p.Ks, v)
 		default:
 			panic(fmt.Errorf("unexpected constant type: %d", t))
 		}

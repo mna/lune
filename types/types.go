@@ -39,28 +39,28 @@ type Value interface{}
 
 type Closure struct {
 	P      *Prototype
-	UpVals []*Value
+	UpVals []Value
 }
 
 func NewClosure(p *Prototype) *Closure {
-	return &Closure{p, make([]*Value, len(p.Upvalues))}
+	return &Closure{p, make([]Value, len(p.Upvalues))}
 }
 
 // Naive implementation for now: always a map, no array optimization
-type Table map[*Value]*Value
+type Table map[Value]Value
 
-func (t Table) Set(k *Value, v *Value) {
+func (t Table) Set(k Value, v Value) {
 	t[k] = v
 }
 
-func (t Table) Get(k *Value) *Value {
+func (t Table) Get(k Value) Value {
 	return t[k]
 }
 
 type Prototype struct {
 	Meta     *FuncMeta
 	Code     []Instruction
-	Ks       []*Value
+	Ks       []Value
 	Protos   []*Prototype
 	Upvalues []*Upvalue
 
@@ -80,7 +80,7 @@ func (p *Prototype) String() string {
 	}
 	buf.WriteString(fmt.Sprintln("Constants (", len(p.Ks), ") :"))
 	for _, v := range p.Ks {
-		buf.WriteString(fmt.Sprintf("%+v\n", *v))
+		buf.WriteString(fmt.Sprintf("%+v\n", v))
 	}
 	buf.WriteString(fmt.Sprintln("Functions (", len(p.Protos), ") :"))
 	for _, f := range p.Protos {

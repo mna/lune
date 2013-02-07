@@ -12,11 +12,11 @@ func Execute(s *State) {
 newFrame:
 	getVal := func(idx int, isK bool, isUpval bool) *types.Value {
 		if isUpval {
-			return ci.Cl.UpVals[idx]
+			return &(ci.Cl.UpVals[idx])
 		} else if isK {
-			return ci.Cl.P.Ks[idx]
+			return &(ci.Cl.P.Ks[idx])
 		}
-		return s.Stack.Get(ci.Base + idx)
+		return &(s.Stack.stk[ci.Base+idx])
 	}
 
 	for {
@@ -28,6 +28,7 @@ newFrame:
 		ra := getVal(i.GetArgA(), false, false)
 
 		s.Stack.dumpStack()
+		// TODO : Using opmasks, get a, b, c correctly in one call?
 		switch i.GetOpCode() {
 		case types.OP_LOADK:
 			vx, _ = i.GetArgBx(false)
@@ -44,8 +45,9 @@ newFrame:
 			vx, vk = i.GetArgC(true)
 			c := getVal(vx, vk, false)
 
-			(*a).(types.Table)[b] = c
-			fmt.Printf("%s : k=%v v=%v\n", i.GetOpCode(), *b, *c)
+			t := (*a).(types.Table)
+			t.Set(*b, *c)
+			fmt.Printf("%s : k=%#v v=%#v\n", i.GetOpCode(), *b, *c)
 
 		case types.OP_GETTABUP:
 			vx, _ = i.GetArgB(false)
@@ -53,8 +55,8 @@ newFrame:
 			vx, vk = i.GetArgC(true)
 			c := getVal(vx, vk, false)
 			t := (*b).(types.Table)
-			*ra = *(t[c])
-			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, *(t[c]), *ra)
+			*ra = t.Get(*c)
+			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, t.Get(*c), *ra)
 
 		case types.OP_MUL:
 			vx, vk = i.GetArgB(true)

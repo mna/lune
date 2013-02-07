@@ -10,7 +10,7 @@ import (
 // http://play.golang.org/p/e2Ptu8puSZ
 type Stack struct {
 	top int // First free slot
-	stk []*types.Value
+	stk []types.Value
 }
 
 func newStack() *Stack {
@@ -22,12 +22,12 @@ type State struct {
 	Globals types.Table
 }
 
-func (s *Stack) Get(idx int) *types.Value {
+func (s *Stack) Get(idx int) types.Value {
 	return s.stk[idx]
 }
 
 func (s *Stack) push(v types.Value) {
-	s.stk[s.top] = &v
+	s.stk[s.top] = v
 	s.top++
 }
 
@@ -36,19 +36,17 @@ func (s *Stack) checkStack(needed byte) {
 	for i := 0; i < missing; i++ {
 		var v types.Value
 		v = nil
-		s.stk = append(s.stk, &v)
+		s.stk = append(s.stk, v)
 	}
 }
 
 func (s *Stack) dumpStack() {
 	fmt.Println("*** DUMP STACK ***")
 	for i, v := range s.stk {
-		if v == nil {
-			fmt.Println(i, v)
-		} else if f, ok := (*v).(*types.Closure); ok {
+		if f, ok := v.(*types.Closure); ok {
 			fmt.Println(i, f.P.Source, f.P.Meta.LineDefined)
 		} else {
-			fmt.Println(i, *v)
+			fmt.Println(i, v)
 		}
 	}
 }
@@ -60,7 +58,7 @@ func NewState(entryPoint *types.Prototype) *State {
 	if l := len(entryPoint.Upvalues); l == 1 {
 		// 1 upvalue = globals table as upvalue
 		v := types.Value(s.Globals)
-		cl.UpVals[0] = &v
+		cl.UpVals[0] = v
 	} else if l > 1 {
 		// TODO : panic?
 		panic("too many upvalues expected for entry point")
@@ -85,7 +83,7 @@ type CallInfo struct {
 func newCallInfo(s *State, fIdx int, prev *CallInfo) *CallInfo {
 	// Get the function's closure at this stack index
 	f := s.Stack.Get(fIdx)
-	cl := (*f).(*types.Closure)
+	cl := f.(*types.Closure)
 
 	// Make sure the stack has enough slots
 	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
