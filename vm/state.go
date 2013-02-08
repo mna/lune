@@ -32,7 +32,7 @@ func (s *Stack) push(v types.Value) {
 }
 
 func (s *Stack) checkStack(needed byte) {
-	missing := (s.top + int(needed) - 1) - cap(s.stk)
+	missing := (s.top + int(needed) + 1) - cap(s.stk)
 	for i := 0; i < missing; i++ {
 		var v types.Value
 		v = nil
