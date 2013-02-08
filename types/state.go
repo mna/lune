@@ -1,8 +1,7 @@
-package vm
+package types
 
 import (
 	"fmt"
-	"github.com/PuerkitoBio/lune/types"
 )
 
 // Holds pointers to values (pointer to empty interface - yes, I know, but it is 
@@ -10,7 +9,7 @@ import (
 // http://play.golang.org/p/e2Ptu8puSZ
 type Stack struct {
 	top int // First free slot
-	stk []types.Value
+	stk []Value
 }
 
 func newStack() *Stack {
@@ -19,31 +18,37 @@ func newStack() *Stack {
 
 type State struct {
 	Stack   *Stack
-	Globals types.Table
+	Frame   []Value
+	Globals Table
+	CI      *CallInfo
 }
 
-func (s *Stack) Get(idx int) types.Value {
+func (s *Stack) Get(idx int) Value {
 	return s.stk[idx]
 }
 
-func (s *Stack) push(v types.Value) {
+func (s *Stack) Push(v Value) {
 	s.stk[s.top] = v
 	s.top++
+}
+
+func (s *Stack) Slice(base int) []Value {
+	return s.stk[base:s.top]
 }
 
 func (s *Stack) checkStack(needed byte) {
 	missing := (s.top + int(needed) + 1) - cap(s.stk)
 	for i := 0; i < missing; i++ {
-		var v types.Value
+		var v Value
 		v = nil
 		s.stk = append(s.stk, v)
 	}
 }
 
-func (s *Stack) dumpStack() {
+func (s *Stack) DumpStack() {
 	fmt.Println("*** DUMP STACK ***")
 	for i, v := range s.stk {
-		if f, ok := v.(*types.Closure); ok {
+		if f, ok := v.(*Closure); ok {
 			fmt.Println(i, f.P.Source, f.P.Meta.LineDefined)
 		} else {
 			fmt.Println(i, v)
@@ -51,13 +56,16 @@ func (s *Stack) dumpStack() {
 	}
 }
 
-func NewState(entryPoint *types.Prototype) *State {
-	s := &State{newStack(), make(types.Table)}
+func NewState(entryPoint *Prototype) *State {
+	s := &State{
+		Stack:   newStack(),
+		Globals: make(Table),
+	}
 
-	cl := types.NewClosure(entryPoint)
+	cl := NewClosure(entryPoint)
 	if l := len(entryPoint.Upvalues); l == 1 {
 		// 1 upvalue = globals table as upvalue
-		v := types.Value(s.Globals)
+		v := Value(s.Globals)
 		cl.UpVals[0] = v
 	} else if l > 1 {
 		// TODO : panic?
@@ -66,24 +74,14 @@ func NewState(entryPoint *types.Prototype) *State {
 
 	// Push the closure on the stack
 	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
-	s.Stack.push(cl)
+	s.Stack.Push(cl)
 	return s
 }
 
-type CallInfo struct {
-	Cl         *types.Closure
-	FuncIndex  int
-	NumResults int
-	CallStatus byte
-	PC         int
-	Base       int
-	Prev       *CallInfo
-}
-
-func newCallInfo(s *State, fIdx int, prev *CallInfo) *CallInfo {
+func (s *State) NewCallInfo(fIdx int, prev *CallInfo) {
 	// Get the function's closure at this stack index
 	f := s.Stack.Get(fIdx)
-	cl := f.(*types.Closure)
+	cl := f.(*Closure)
 
 	// Make sure the stack has enough slots
 	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
@@ -91,7 +89,7 @@ func newCallInfo(s *State, fIdx int, prev *CallInfo) *CallInfo {
 	// Complete the arguments
 	n := s.Stack.top - fIdx - 1
 	for ; n < int(cl.P.Meta.NumParams); n++ {
-		s.Stack.push(nil)
+		s.Stack.Push(nil)
 	}
 
 	ci := new(CallInfo)
@@ -103,32 +101,15 @@ func newCallInfo(s *State, fIdx int, prev *CallInfo) *CallInfo {
 	ci.Base = fIdx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday
 	ci.Prev = prev
 
-	return ci
+	s.CI = ci
 }
 
-/*
-type gState struct {
-	strt strTable
+type CallInfo struct {
+	Cl         *Closure
+	FuncIndex  int
+	NumResults int
+	CallStatus byte
+	PC         int
+	Base       int
+	Prev       *CallInfo
 }
-
-func newGState() *gState {
-	return &gState{newStrTable()}
-}
-
-type lState struct {
-	g      *gState
-	stk    *stack
-	ci     *callInfo
-	baseCi callInfo
-}
-
-func NewState() *lState {
-	return &lState{newGState(), newStack(), nil, callInfo{}}
-}
-
-type callInfo struct {
-	funcStkIdx uint
-	prev, next *callInfo
-	nResults   uint8
-}
-*/

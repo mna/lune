@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/lune/serializer"
 	"github.com/PuerkitoBio/lune/stdlib"
+	"github.com/PuerkitoBio/lune/types"
 	"github.com/PuerkitoBio/lune/vm"
 	"os"
 )
@@ -27,7 +28,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	s := vm.NewState(p)
+	s := types.NewState(p)
 	stdlib.OpenLibs(s.Globals)
 	vm.Execute(s)
 }

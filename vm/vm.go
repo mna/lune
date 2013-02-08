@@ -5,87 +5,53 @@ import (
 	"github.com/PuerkitoBio/lune/types"
 )
 
-func Execute(s *State) {
+func Execute(s *types.State) {
+	var a, b, c *types.Value
+
 	// Start with entry point (position 0)
-	ci := newCallInfo(s, 0, nil)
+	s.NewCallInfo(0, nil)
 
 newFrame:
-	frame := s.Stack.stk[ci.Base:]
-	getVal := func(idx int, isK bool, isUpval bool) *types.Value {
-		if isUpval {
-			return &(ci.Cl.UpVals[idx])
-		} else if isK {
-			return &(ci.Cl.P.Ks[idx])
-		}
-		return &(frame[idx])
-	}
-
+	s.Frame = s.Stack.Slice(s.CI.Base)
 	for {
-		var vx int
-		var vk bool
+		i := s.CI.Cl.P.Code[s.CI.PC]
+		s.CI.PC++
+		s.Stack.DumpStack()
 
-		i := ci.Cl.P.Code[ci.PC]
-		ci.PC++
-		ra := getVal(i.GetArgA(), false, false)
+		a, b, c = i.GetArgs(s)
 
-		s.Stack.dumpStack()
-		// TODO : Using opmasks, get a, b, c correctly in one call?
 		switch i.GetOpCode() {
 		case types.OP_MOVE:
-			vx, vk = i.GetArgB(false)
-			b := getVal(vx, vk, false)
-			*ra = *b
-			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *ra, *b)
+			*a = *b
+			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *a, *b)
 
 		case types.OP_LOADK:
-			vx, _ = i.GetArgBx(false)
-			b := getVal(vx, true, false)
-			*ra = *b
-			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *ra, *b)
+			*a = *b
+			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *a, *b)
 
 		case types.OP_SETTABUP:
-			// In "upvalue" opcodes, the "A" refers to the index within the upvalues!
-			// Which is probably why it doesn't use the "ra" variable (relative to base).
-			a := getVal(i.GetArgA(), false, true)
-			vx, vk = i.GetArgB(true)
-			b := getVal(vx, vk, false)
-			vx, vk = i.GetArgC(true)
-			c := getVal(vx, vk, false)
-
 			t := (*a).(types.Table)
 			t.Set(*b, *c)
 			fmt.Printf("%s : k=%#v v=%#v\n", i.GetOpCode(), *b, *c)
 
 		case types.OP_GETTABUP:
-			vx, _ = i.GetArgB(false)
-			b := getVal(vx, false, true)
-			vx, vk = i.GetArgC(true)
-			c := getVal(vx, vk, false)
 			t := (*b).(types.Table)
-			*ra = t.Get(*c)
-			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, t.Get(*c), *ra)
+			*a = t.Get(*c)
+			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, t.Get(*c), *a)
 
 		case types.OP_GETTABLE:
-			vx, vk = i.GetArgB(false)
-			b := getVal(vx, vk, false)
-			vx, vk = i.GetArgC(true)
-			c := getVal(vx, vk, false)
 			t := (*b).(types.Table)
-			*ra = t.Get(*c)
-			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, t.Get(*c), *ra)
+			*a = t.Get(*c)
+			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, t.Get(*c), *a)
 
 		case types.OP_MUL:
-			vx, vk = i.GetArgB(true)
-			b := getVal(vx, vk, false)
-			vx, vk = i.GetArgC(true)
-			c := getVal(vx, vk, false)
 			bf := (*b).(float64)
 			cf := (*c).(float64)
-			*ra = bf * cf
-			fmt.Printf("%s : b=%v * c=%v = ra=%v\n", i.GetOpCode(), bf, cf, *ra)
+			*a = bf * cf
+			fmt.Printf("%s : b=%v * c=%v = ra=%v\n", i.GetOpCode(), bf, cf, *a)
 
 		case types.OP_RETURN:
-			if ci = ci.Prev; ci == nil {
+			if s.CI = s.CI.Prev; s.CI == nil {
 				return
 			}
 			goto newFrame
