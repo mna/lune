@@ -6,6 +6,17 @@ import (
 	"math"
 )
 
+func isFalse(v types.Value) bool {
+	// Two values evaluate to False: nil and boolean false
+	if v == nil {
+		return true
+	}
+	if b, ok := v.(bool); ok && !b {
+		return true
+	}
+	return false
+}
+
 func Execute(s *types.State) {
 	var a, b, c *types.Value
 
@@ -146,6 +157,10 @@ newFrame:
 			*a = -bf
 			fmt.Printf("%s : -b=%v\n", i.GetOpCode(), *a)
 
+		case types.OP_NOT:
+			*a = isFalse(*b)
+			fmt.Printf("%s : !b=%v\n", i.GetOpCode(), *a)
+
 		case types.OP_CALL:
 			/*
 				CALL A B C R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
@@ -206,11 +221,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_NOT,
-	        TValue *rb = RB(i);
-	        int res = l_isfalse(rb);  // next assignment may change this value 
-	        setbvalue(ra, res);
-	      )
 	      vmcase(OP_LEN,
 	        Protect(luaV_objlen(L, ra, RB(i)));
 	      )

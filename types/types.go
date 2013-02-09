@@ -26,10 +26,10 @@ type GoFunc func(*State) int
   Values are represented this way:
   nil:      value is nil
   bool:     value is bool
-  number:   value is float64 or float32 based on GOARCH?
-  string:   value is int, the index to the string table value
-  function: value is *Closure
-  table:    ..
+  number:   value is float64 (TODO: or float32 based on GOARCH?)
+  string:   value is string
+  function: value is *Closure (lune) or GoFunc (Go)
+  table:    value is Table
   thread:   ..
   userdata: ..
 */
