@@ -52,15 +52,17 @@ newFrame:
 			fmt.Printf("%s : a=%v b=%v c=%v\n", i.GetOpCode(), *a, bb, cb)
 
 		case types.OP_LOADNIL:
+			ax := i.GetArgA()
 			bx, _ := i.GetArgB(false)
 			for j := 0; j <= bx; j++ {
-				// TODO : Increment a, set all to nil up to RA(A+B)
+				a = &s.CI.Frame[ax+j]
 				*a = nil
 			}
-			/*int b = GETARG_B(i);
-			  do {
-			    setnilvalue(ra++);
-			  } while (b--);*/
+			fmt.Printf("%s : ax=%v bx=%v\n", i.GetOpCode(), ax, bx)
+
+		case types.OP_GETUPVAL:
+			*a = *b
+			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *a, *b)
 
 		case types.OP_SETTABUP:
 			t := (*a).(types.Table)
@@ -145,12 +147,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_LOADNIL,
-	        int b = GETARG_B(i);
-	        do {
-	          setnilvalue(ra++);
-	        } while (b--);
-	      )
 	      vmcase(OP_GETUPVAL,
 	        int b = GETARG_B(i);
 	        setobj2s(L, ra, cl->upvals[b]->v);

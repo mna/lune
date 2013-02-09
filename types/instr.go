@@ -128,7 +128,7 @@ func (i Instruction) GetArgs(s *State) (a, b, c *Value) {
 				bx = i.GetArgsBx()
 			}
 
-			if op == OP_GETTABUP {
+			if op == OP_GETTABUP || op == OP_GETUPVAL {
 				b = &s.CI.Cl.UpVals[bx]
 			} else if bm == OpArgK && bk {
 				b = &s.CI.Cl.P.Ks[bx]
