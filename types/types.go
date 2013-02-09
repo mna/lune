@@ -47,6 +47,10 @@ func NewClosure(p *Prototype) *Closure {
 // Naive implementation for now: always a map, no array optimization
 type Table map[Value]Value
 
+func NewTable() Table {
+	return make(Table)
+}
+
 func (t Table) Set(k Value, v Value) {
 	t[k] = v
 }

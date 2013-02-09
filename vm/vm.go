@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"github.com/PuerkitoBio/lune/types"
+	"math"
 )
 
 func Execute(s *types.State) {
@@ -64,11 +65,6 @@ newFrame:
 			*a = *b
 			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *a, *b)
 
-		case types.OP_SETTABUP:
-			t := (*a).(types.Table)
-			t.Set(*b, *c)
-			fmt.Printf("%s : k=%#v v=%#v\n", i.GetOpCode(), *b, *c)
-
 		case types.OP_GETTABUP:
 			t := (*b).(types.Table)
 			*a = t.Get(*c)
@@ -79,11 +75,76 @@ newFrame:
 			*a = t.Get(*c)
 			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, t.Get(*c), *a)
 
+		case types.OP_SETTABUP:
+			t := (*a).(types.Table)
+			t.Set(*b, *c)
+			fmt.Printf("%s : k=%#v v=%#v\n", i.GetOpCode(), *b, *c)
+
+		case types.OP_SETUPVAL:
+			*b = *a
+			fmt.Printf("%s : b=%v a=%v\n", i.GetOpCode(), *b, *a)
+
+		case types.OP_SETTABLE:
+			t := (*a).(types.Table)
+			t.Set(*b, *c)
+			fmt.Printf("%s : k=%v v=%v t=%v\n", i.GetOpCode(), *b, *c, *a)
+
+		case types.OP_NEWTABLE:
+			t := types.NewTable()
+			// TODO : Encoded array and hash sizes (B and C) are ignored at the moment
+			*a = t
+			fmt.Printf("%s : t=%v b=%v c=%v\n", i.GetOpCode(), *a, *b, *c)
+
+		case types.OP_SELF:
+			ax := i.GetArgA()
+			a = &s.CI.Frame[ax+1]
+			*a = *b
+			a = &s.CI.Frame[ax]
+			t := (*b).(types.Table)
+			*a = t.Get(*c)
+			fmt.Printf("%s : a+1=%v a=%v c=%v\n", i.GetOpCode(), *b, t.Get(*c), *c)
+
+			// TODO : For all operators, handle non-numeric data types (see Lua's conversion rules)
+		case types.OP_ADD:
+			bf := (*b).(float64)
+			cf := (*c).(float64)
+			*a = bf + cf
+			fmt.Printf("%s : b=%v + c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+
+		case types.OP_SUB:
+			bf := (*b).(float64)
+			cf := (*c).(float64)
+			*a = bf - cf
+			fmt.Printf("%s : b=%v - c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+
 		case types.OP_MUL:
 			bf := (*b).(float64)
 			cf := (*c).(float64)
 			*a = bf * cf
-			fmt.Printf("%s : b=%v * c=%v = ra=%v\n", i.GetOpCode(), bf, cf, *a)
+			fmt.Printf("%s : b=%v * c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+
+		case types.OP_DIV:
+			bf := (*b).(float64)
+			cf := (*c).(float64)
+			*a = bf / cf
+			fmt.Printf("%s : b=%v ÷ c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+
+		case types.OP_MOD:
+			bf := (*b).(float64)
+			cf := (*c).(float64)
+			*a = math.Mod(bf, cf)
+			fmt.Printf("%s : b=%v % c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+
+		case types.OP_POW:
+			bf := (*b).(float64)
+			cf := (*c).(float64)
+			*a = math.Pow(bf, cf)
+			fmt.Printf("%s : b=%v ^ c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+
+		case types.OP_UNM:
+			bf := (*b).(float64)
+			*a = -bf
+			fmt.Printf("%s : -b=%v\n", i.GetOpCode(), *a)
 
 		case types.OP_CALL:
 			/*
@@ -122,8 +183,6 @@ newFrame:
 		}
 
 	}
-	// TODO : CHeck bookmarks for how the CallInfo->u.l gets set (luaD_preCall)
-
 	/*
 	  CallInfo *ci = L->ci;
 	  LClosure *cl;
@@ -147,71 +206,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_GETUPVAL,
-	        int b = GETARG_B(i);
-	        setobj2s(L, ra, cl->upvals[b]->v);
-	      )
-	      vmcase(OP_GETTABUP,
-	        int b = GETARG_B(i);
-	        Protect(luaV_gettable(L, cl->upvals[b]->v, RKC(i), ra));
-	      )
-	      vmcase(OP_GETTABLE,
-	        Protect(luaV_gettable(L, RB(i), RKC(i), ra));
-	      )
-	      vmcase(OP_SETTABUP,
-	        int a = GETARG_A(i);
-	        Protect(luaV_settable(L, cl->upvals[a]->v, RKB(i), RKC(i)));
-	      )
-	      vmcase(OP_SETUPVAL,
-	        UpVal *uv = cl->upvals[GETARG_B(i)];
-	        setobj(L, uv->v, ra);
-	        luaC_barrier(L, uv, ra);
-	      )
-	      vmcase(OP_SETTABLE,
-	        Protect(luaV_settable(L, ra, RKB(i), RKC(i)));
-	      )
-	      vmcase(OP_NEWTABLE,
-	        int b = GETARG_B(i);
-	        int c = GETARG_C(i);
-	        Table *t = luaH_new(L);
-	        sethvalue(L, ra, t);
-	        if (b != 0 || c != 0)
-	          luaH_resize(L, t, luaO_fb2int(b), luaO_fb2int(c));
-	        checkGC(L, ra + 1);
-	      )
-	      vmcase(OP_SELF,
-	        StkId rb = RB(i);
-	        setobjs2s(L, ra+1, rb);
-	        Protect(luaV_gettable(L, rb, RKC(i), ra));
-	      )
-	      vmcase(OP_ADD,
-	        arith_op(luai_numadd, TM_ADD);
-	      )
-	      vmcase(OP_SUB,
-	        arith_op(luai_numsub, TM_SUB);
-	      )
-	      vmcase(OP_MUL,
-	        arith_op(luai_nummul, TM_MUL);
-	      )
-	      vmcase(OP_DIV,
-	        arith_op(luai_numdiv, TM_DIV);
-	      )
-	      vmcase(OP_MOD,
-	        arith_op(luai_nummod, TM_MOD);
-	      )
-	      vmcase(OP_POW,
-	        arith_op(luai_numpow, TM_POW);
-	      )
-	      vmcase(OP_UNM,
-	        TValue *rb = RB(i);
-	        if (ttisnumber(rb)) {
-	          lua_Number nb = nvalue(rb);
-	          setnvalue(ra, luai_numunm(L, nb));
-	        }
-	        else {
-	          Protect(luaV_arith(L, ra, rb, rb, TM_UNM));
-	        }
-	      )
 	      vmcase(OP_NOT,
 	        TValue *rb = RB(i);
 	        int res = l_isfalse(rb);  // next assignment may change this value 

@@ -55,7 +55,7 @@ func (s *Stack) DumpStack() {
 func NewState(entryPoint *Prototype) *State {
 	s := &State{
 		Stack:   newStack(),
-		Globals: make(Table),
+		Globals: NewTable(),
 	}
 
 	cl := NewClosure(entryPoint)
