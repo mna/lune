@@ -20,6 +20,8 @@ const (
 	TTHREAD
 )
 
+type GoFunc func(*State) int
+
 /*
   Values are represented this way:
   nil:      value is nil

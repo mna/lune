@@ -16,10 +16,7 @@ newFrame:
 		i := s.CI.Cl.P.Code[s.CI.PC]
 		s.CI.PC++
 		s.Stack.DumpStack()
-
-		if i.GetOpCode() != types.OP_RETURN {
-			a, b, c = i.GetArgs(s)
-		}
+		a, b, c = i.GetArgs(s)
 
 		switch i.GetOpCode() {
 		case types.OP_MOVE:
@@ -51,10 +48,20 @@ newFrame:
 			*a = bf * cf
 			fmt.Printf("%s : b=%v * c=%v = ra=%v\n", i.GetOpCode(), bf, cf, *a)
 
+		case types.OP_CALL:
+			if f, ok := (*a).(types.GoFunc); ok {
+				n := f(s)
+				fmt.Printf("%s : %d\n", i.GetOpCode(), n)
+			} else {
+				fmt.Printf("%s : Ignored as not a GoFunc, not implemented yet.\n", i.GetOpCode())
+			}
+
 		case types.OP_RETURN:
 			if s.CI = s.CI.Prev; s.CI == nil {
+				fmt.Printf("%s\n", i.GetOpCode())
 				return
 			}
+			fmt.Printf("%s : Back to previous call\n", i.GetOpCode())
 			goto newFrame
 
 		default:

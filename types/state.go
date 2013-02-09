@@ -7,6 +7,7 @@ import (
 // Holds pointers to values (pointer to empty interface - yes, I know, but it is 
 // required because the interface may hold the value inline for numbers and bools):
 // http://play.golang.org/p/e2Ptu8puSZ
+
 type Stack struct {
 	top int // First free slot
 	stk []Value
