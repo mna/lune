@@ -14,6 +14,7 @@ func OpenLibs(t types.Table) {
 }
 
 func ioWrite(s *types.State) int {
+  //nArgs := s.Stack.Top - s.CI.Base
 	fmt.Println(">> In Go!")
 	return 0
 }

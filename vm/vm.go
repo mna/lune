@@ -27,6 +27,41 @@ newFrame:
 			*a = *b
 			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *a, *b)
 
+		case types.OP_LOADKx:
+			// Special instruction: must always be followed by OP_EXTRAARG
+			if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_EXTRAARG {
+				panic(fmt.Sprintf("%s: expected OP_EXTRAARG as next instruction, found %s", i.GetOpCode(), i2.GetOpCode()))
+			} else {
+				s.CI.PC++
+				ax := i2.GetArgAx()
+				*a = s.CI.Cl.P.Ks[ax]
+				fmt.Printf("%s : ax=%v a=%v\n", i.GetOpCode(), ax, *a)
+			}
+
+		case types.OP_LOADBOOL:
+			bx, _ := i.GetArgB(false)
+			bb := bx != 0
+			*a = bb
+
+			// Skip next instruction if C is true
+			cx, _ := i.GetArgC(false)
+			cb := cx != 0
+			if cb {
+				s.CI.PC++
+			}
+			fmt.Printf("%s : a=%v b=%v c=%v\n", i.GetOpCode(), *a, bb, cb)
+
+		case types.OP_LOADNIL:
+			bx, _ := i.GetArgB(false)
+			for j := 0; j <= bx; j++ {
+				// TODO : Increment a, set all to nil up to RA(A+B)
+				*a = nil
+			}
+			/*int b = GETARG_B(i);
+			  do {
+			    setnilvalue(ra++);
+			  } while (b--);*/
+
 		case types.OP_SETTABUP:
 			t := (*a).(types.Table)
 			t.Set(*b, *c)
@@ -49,6 +84,22 @@ newFrame:
 			fmt.Printf("%s : b=%v * c=%v = ra=%v\n", i.GetOpCode(), bf, cf, *a)
 
 		case types.OP_CALL:
+			/*
+				CALL A B C R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
+				Performs a function call, with register R(A) holding the reference to the
+				function object to be called. Parameters to the function are placed in the
+				registers following R(A). If B is 1, the function has no parameters. If B is 2
+				or more, there are (B-1) parameters.
+				If B is 0, the function parameters range from R(A+1) to the top of the stack.
+				This form is used when the last expression in the parameter list is a
+				function call, so the number of actual parameters is indeterminate.
+				Results returned by the function call is placed in a range of registers
+				starting from R(A). If C is 1, no return results are saved. If C is 2 or more,
+				(C-1) return values are saved. If C is 0, then multiple return results are
+				saved, depending on the called function.
+				CALL always updates the top of stack value. CALL, RETURN, VARARG
+				and SETLIST can use multiple values (up to the top of the stack.)
+			*/
 			if f, ok := (*a).(types.GoFunc); ok {
 				n := f(s)
 				fmt.Printf("%s : %d\n", i.GetOpCode(), n)
@@ -94,23 +145,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_MOVE,
-	        setobjs2s(L, ra, RB(i));
-	      )
-	      vmcase(OP_LOADK,
-	        TValue *rb = k + GETARG_Bx(i);
-	        setobj2s(L, ra, rb);
-	      )
-	      vmcase(OP_LOADKX,
-	        TValue *rb;
-	        lua_assert(GET_OPCODE(*ci->u.l.savedpc) == OP_EXTRAARG);
-	        rb = k + GETARG_Ax(*ci->u.l.savedpc++);
-	        setobj2s(L, ra, rb);
-	      )
-	      vmcase(OP_LOADBOOL,
-	        setbvalue(ra, GETARG_B(i));
-	        if (GETARG_C(i)) ci->u.l.savedpc++;  // skip next instruction (if C) 
-	      )
 	      vmcase(OP_LOADNIL,
 	        int b = GETARG_B(i);
 	        do {

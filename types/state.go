@@ -9,7 +9,7 @@ import (
 // http://play.golang.org/p/e2Ptu8puSZ
 
 type Stack struct {
-	top int // First free slot
+	Top int // First free slot
 	stk []Value
 }
 
@@ -28,12 +28,12 @@ func (s *Stack) Get(idx int) Value {
 }
 
 func (s *Stack) Push(v Value) {
-	s.stk[s.top] = v
-	s.top++
+	s.stk[s.Top] = v
+	s.Top++
 }
 
 func (s *Stack) checkStack(needed byte) {
-	missing := (s.top + int(needed) + 1) - cap(s.stk)
+	missing := (s.Top + int(needed) + 1) - cap(s.stk)
 	for i := 0; i < missing; i++ {
 		var v Value
 		v = nil
@@ -83,7 +83,7 @@ func (s *State) NewCallInfo(fIdx int, prev *CallInfo) {
 	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
 
 	// Complete the arguments
-	n := s.Stack.top - fIdx - 1
+	n := s.Stack.Top - fIdx - 1
 	for ; n < int(cl.P.Meta.NumParams); n++ {
 		s.Stack.Push(nil)
 	}
