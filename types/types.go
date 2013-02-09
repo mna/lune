@@ -8,10 +8,6 @@ import (
 type ValType byte
 
 const (
-//strTableCap = 100
-)
-
-const (
 	// Value types constants, must match with Lua's, see lua.h grep "basic types"
 	TNIL ValType = iota
 	TBOOL
@@ -121,36 +117,3 @@ type LocVar struct {
 	Startpc uint32
 	Endpc   uint32
 }
-
-/*
-type table struct {
-	m map[Value]Value
-	a []Value
-}
-
-type strTable map[string]uint
-
-func newStrTable() strTable {
-	return make(strTable, strTableCap)
-}
-
-func (st strTable) intern(s string) bool {
-	cnt, ok := st[s]
-	if !ok {
-		// This string doesn't exist yet
-		st[s] = 1
-	} else {
-		// This string already exists, increment the refcount
-		st[s] = cnt + 1
-	}
-	return ok
-}
-
-type stack struct {
-	s []Value
-}
-
-func newStack() *stack {
-	return &stack{}
-}
-*/

@@ -60,7 +60,7 @@ func getArgPossibleK(i Instruction, argNm byte, pos, size uint) (int, bool) {
 		k = true
 		arg = indexK(arg)
 	} else if md == OpArgN {
-		panic(fmt.Sprintf("unexpected use of %s in operator %s", argNm, op))
+		panic(fmt.Sprintf("unexpected use of %d in operator %s", argNm, op))
 	}
 	return arg, k
 }
@@ -107,7 +107,9 @@ func indexK(v int) int {
 
 func (i Instruction) GetArgs(s *State) (a, b, c *Value) {
 	var ax, bx, cx int
+	var bk, ck bool
 
+	fmt.Printf("FRAME: %#v\n", s.CI.Frame)
 	op := i.GetOpCode()
 	om := op.GetOpMode()
 
@@ -119,39 +121,37 @@ func (i Instruction) GetArgs(s *State) (a, b, c *Value) {
 		if bm != OpArgN {
 			switch om {
 			case MODE_iABC:
-				bx, _ = i.GetArgB(true)
+				bx, bk = i.GetArgB(true)
 			case MODE_iABx:
-				bx, _ = i.GetArgBx(true)
+				bx, bk = i.GetArgBx(true)
 			case MODE_iAsBx:
 				bx = i.GetArgsBx()
 			}
 
-			switch bm {
-			case OpArgK:
-				b = &s.CI.Cl.P.Ks[bx]
-			case OpArgR:
-				b = &s.Frame[bx]
-			case OpArgU:
+			if op == OP_GETTABUP {
 				b = &s.CI.Cl.UpVals[bx]
+			} else if bm == OpArgK && bk {
+				b = &s.CI.Cl.P.Ks[bx]
+			} else {
+				b = &s.CI.Frame[bx]
 			}
 		}
 		if om == MODE_iABC {
 			cm := op.GetCMode()
-			cx, _ = i.GetArgC(true)
-			switch cm {
-			case OpArgK:
-				c = &s.CI.Cl.P.Ks[cx]
-			case OpArgR:
-				c = &s.Frame[cx]
-			case OpArgU:
-				c = &s.CI.Cl.UpVals[cx]
+			if cm != OpArgN {
+				cx, ck = i.GetArgC(true)
+				if cm == OpArgK && ck {
+					c = &s.CI.Cl.P.Ks[cx]
+				} else {
+					c = &s.CI.Frame[cx]
+				}
 			}
 		}
 	}
 
 	if op.GetAMode() {
 		// Register
-		a = &s.Frame[ax]
+		a = &s.CI.Frame[ax]
 	} else {
 		// Upvalue
 		a = &s.CI.Cl.UpVals[ax]

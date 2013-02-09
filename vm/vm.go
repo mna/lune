@@ -12,13 +12,14 @@ func Execute(s *types.State) {
 	s.NewCallInfo(0, nil)
 
 newFrame:
-	s.Frame = s.Stack.Slice(s.CI.Base)
 	for {
 		i := s.CI.Cl.P.Code[s.CI.PC]
 		s.CI.PC++
 		s.Stack.DumpStack()
 
-		a, b, c = i.GetArgs(s)
+		if i.GetOpCode() != types.OP_RETURN {
+			a, b, c = i.GetArgs(s)
+		}
 
 		switch i.GetOpCode() {
 		case types.OP_MOVE:

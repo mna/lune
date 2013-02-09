@@ -18,7 +18,6 @@ func newStack() *Stack {
 
 type State struct {
 	Stack   *Stack
-	Frame   []Value
 	Globals Table
 	CI      *CallInfo
 }
@@ -30,10 +29,6 @@ func (s *Stack) Get(idx int) Value {
 func (s *Stack) Push(v Value) {
 	s.stk[s.top] = v
 	s.top++
-}
-
-func (s *Stack) Slice(base int) []Value {
-	return s.stk[base:s.top]
 }
 
 func (s *Stack) checkStack(needed byte) {
@@ -100,11 +95,13 @@ func (s *State) NewCallInfo(fIdx int, prev *CallInfo) {
 	ci.PC = 0
 	ci.Base = fIdx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday
 	ci.Prev = prev
+	ci.Frame = s.Stack.stk[ci.Base:]
 
 	s.CI = ci
 }
 
 type CallInfo struct {
+	Frame      []Value
 	Cl         *Closure
 	FuncIndex  int
 	NumResults int
