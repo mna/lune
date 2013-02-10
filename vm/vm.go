@@ -18,6 +18,16 @@ func isFalse(v types.Value) bool {
 	return false
 }
 
+func doJump(s *types.State, i types.Instruction, e int) (ax, bx int) {
+	ax = i.GetArgA()
+	if ax > 0 {
+		// TODO : Close upvalues? See dojump in lvm.c.
+	}
+	bx = i.GetArgsBx()
+	s.CI.PC += bx + e
+	return
+}
+
 func Execute(s *types.State) {
 	var a, b, c *types.Value
 
@@ -185,27 +195,60 @@ newFrame:
 			fmt.Printf("%s : b:%v .. c:%v = a:%v\n", i.GetOpCode(), *b, *c, *a)
 
 		case types.OP_JMP:
-			ax := i.GetArgA()
-			if ax > 0 {
-				// TODO : Close upvalues? See dojump in lvm.c.
-			}
-			bx := i.GetArgsBx()
-			s.CI.PC += bx
+			ax, bx := doJump(s, i, 0)
 			fmt.Printf("%s : ax:%v PC+=%v\n", i.GetOpCode(), ax, bx)
 
 		case types.OP_EQ:
 			// Compares RK(B) and RK(C), which may be registers or constants. If the
 			// boolean result is not A, then skip the next instruction. Conversely, if the
 			// boolean result equals A, continue with the next instruction.
-			if ((*b) == (*c)) != (*a != 0) {
+			ax := i.GetArgA()
+			bf, cf := (*b).(float64), (*c).(float64)
+			if (bf == cf) != (ax != 0) {
 				s.CI.PC++
 			} else {
 				// For the fall-through case, a JMP is always expected, in order to optimize
 				// execution in the virtual machine. In effect, EQ, LT and LE must always be
 				// paired with a following JMP instruction.
-				// TODO : Extract a "doJump" method from OP_JMP
+				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", i.GetOpCode(), i2.GetOpCode()))
+				} else {
+					doJump(s, i2, 1)
+				}
 			}
-			fmt.Printf("%s : b:%v ==? c:%v | a:%v\n", i.GetOpCode(), *b, *c, *a)
+			fmt.Printf("%s : b:%v ==? c:%v | a:%v\n", i.GetOpCode(), bf, cf, ax)
+
+		case types.OP_LT:
+			// See OP_EQ for details.
+			// TODO : See luaV_lessthan implementation, some subleties, type conversions?
+			ax := i.GetArgA()
+			bf, cf := (*b).(float64), (*c).(float64)
+			if (bf < cf) != (ax != 0) {
+				s.CI.PC++
+			} else {
+				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", i.GetOpCode(), i2.GetOpCode()))
+				} else {
+					doJump(s, i2, 1)
+				}
+			}
+			fmt.Printf("%s : b:%v <? c:%v | a:%v\n", i.GetOpCode(), bf, cf, ax)
+
+		case types.OP_LE:
+			// See OP_EQ for details.
+			// TODO : See luaV_lessequal implementation, some subleties, type conversions?
+			ax := i.GetArgA()
+			bf, cf := (*b).(float64), (*c).(float64)
+			if (bf <= cf) != (ax != 0) {
+				s.CI.PC++
+			} else {
+				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", i.GetOpCode(), i2.GetOpCode()))
+				} else {
+					doJump(s, i2, 1)
+				}
+			}
+			fmt.Printf("%s : b:%v <=? c:%v | a:%v\n", i.GetOpCode(), bf, cf, ax)
 
 		case types.OP_CALL:
 			/*
@@ -267,32 +310,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_EQ,
-	        TValue *rb = RKB(i);
-	        TValue *rc = RKC(i);
-	        Protect(
-	          if (cast_int(equalobj(L, rb, rc)) != GETARG_A(i))
-	            ci->u.l.savedpc++;
-	          else
-	            donextjump(ci);
-	        )
-	      )
-	      vmcase(OP_LT,
-	        Protect(
-	          if (luaV_lessthan(L, RKB(i), RKC(i)) != GETARG_A(i))
-	            ci->u.l.savedpc++;
-	          else
-	            donextjump(ci);
-	        )
-	      )
-	      vmcase(OP_LE,
-	        Protect(
-	          if (luaV_lessequal(L, RKB(i), RKC(i)) != GETARG_A(i))
-	            ci->u.l.savedpc++;
-	          else
-	            donextjump(ci);
-	        )
-	      )
 	      vmcase(OP_TEST,
 	        if (GETARG_C(i) ? l_isfalse(ra) : !l_isfalse(ra))
 	            ci->u.l.savedpc++;
