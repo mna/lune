@@ -59,6 +59,10 @@ func (t Table) Get(k Value) Value {
 	return t[k]
 }
 
+func (t Table) Len() int {
+	return len(t)
+}
+
 type Prototype struct {
 	Meta     *FuncMeta
 	Code     []Instruction

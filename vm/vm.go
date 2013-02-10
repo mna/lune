@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/PuerkitoBio/lune/types"
 	"math"
@@ -161,6 +162,28 @@ newFrame:
 			*a = isFalse(*b)
 			fmt.Printf("%s : !b=%v\n", i.GetOpCode(), *a)
 
+		case types.OP_LEN:
+			switch v := (*b).(type) {
+			case types.Table:
+				*a = v.Len()
+			case string:
+				*a = len(v)
+			default:
+				// TODO : Metamethod	
+			}
+			fmt.Printf("%s : #b=%v\n", i.GetOpCode(), *a)
+
+		case types.OP_CONCAT:
+			// TODO : Manage type conversion? For now, assume strings...
+			var buf bytes.Buffer
+			bx, _ := i.GetArgB(false)
+			cx, _ := i.GetArgC(false)
+			for j := bx; j <= cx; j++ {
+				buf.WriteString(s.CI.Frame[j].(string))
+			}
+			*a = buf.String()
+			fmt.Printf("%s : b:%v .. c:%v = a:%v\n", i.GetOpCode(), *b, *c, *a)
+
 		case types.OP_CALL:
 			/*
 				CALL A B C R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
@@ -221,21 +244,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_LEN,
-	        Protect(luaV_objlen(L, ra, RB(i)));
-	      )
-	      vmcase(OP_CONCAT,
-	        int b = GETARG_B(i);
-	        int c = GETARG_C(i);
-	        StkId rb;
-	        L->top = base + c + 1;  // mark the end of concat operands 
-	        Protect(luaV_concat(L, c - b + 1));
-	        ra = RA(i);  // 'luav_concat' may invoke TMs and move the stack 
-	        rb = b + base;
-	        setobjs2s(L, ra, rb);
-	        checkGC(L, (ra >= rb ? ra + 1 : rb));
-	        L->top = ci->top;  // restore top 
-	      )
 	      vmcase(OP_JMP,
 	        dojump(ci, i, 0);
 	      )
