@@ -184,6 +184,29 @@ newFrame:
 			*a = buf.String()
 			fmt.Printf("%s : b:%v .. c:%v = a:%v\n", i.GetOpCode(), *b, *c, *a)
 
+		case types.OP_JMP:
+			ax := i.GetArgA()
+			if ax > 0 {
+				// TODO : Close upvalues? See dojump in lvm.c.
+			}
+			bx := i.GetArgsBx()
+			s.CI.PC += bx
+			fmt.Printf("%s : ax:%v PC+=%v\n", i.GetOpCode(), ax, bx)
+
+		case types.OP_EQ:
+			// Compares RK(B) and RK(C), which may be registers or constants. If the
+			// boolean result is not A, then skip the next instruction. Conversely, if the
+			// boolean result equals A, continue with the next instruction.
+			if ((*b) == (*c)) != (*a != 0) {
+				s.CI.PC++
+			} else {
+				// For the fall-through case, a JMP is always expected, in order to optimize
+				// execution in the virtual machine. In effect, EQ, LT and LE must always be
+				// paired with a following JMP instruction.
+				// TODO : Extract a "doJump" method from OP_JMP
+			}
+			fmt.Printf("%s : b:%v ==? c:%v | a:%v\n", i.GetOpCode(), *b, *c, *a)
+
 		case types.OP_CALL:
 			/*
 				CALL A B C R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
@@ -244,9 +267,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_JMP,
-	        dojump(ci, i, 0);
-	      )
 	      vmcase(OP_EQ,
 	        TValue *rb = RKB(i);
 	        TValue *rc = RKC(i);

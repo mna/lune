@@ -149,6 +149,7 @@ func (i Instruction) GetArgs(s *State) (a, b, c *Value) {
 		}
 	}
 
+	// TODO : Doesn't seem like what AMode means...
 	if op.GetAMode() {
 		// Register
 		a = &s.CI.Frame[ax]
