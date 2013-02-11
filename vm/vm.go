@@ -37,28 +37,31 @@ func Execute(s *types.State) {
 newFrame:
 	for {
 		i := s.CI.Cl.P.Code[s.CI.PC]
+		op := i.GetOpCode()
 		s.CI.PC++
 		s.Stack.DumpStack()
+		// TODO : Will fail big time here, when some opcodes are executed. OpMasks
+		// just doesn't do what I think it does.
 		a, b, c = i.GetArgs(s)
 
-		switch i.GetOpCode() {
+		switch op {
 		case types.OP_MOVE:
 			*a = *b
 			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *a, *b)
 
 		case types.OP_LOADK:
 			*a = *b
-			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *a, *b)
+			fmt.Printf("%s : A=%v B=%v\n", op, *a, *b)
 
 		case types.OP_LOADKx:
 			// Special instruction: must always be followed by OP_EXTRAARG
 			if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_EXTRAARG {
-				panic(fmt.Sprintf("%s: expected OP_EXTRAARG as next instruction, found %s", i.GetOpCode(), i2.GetOpCode()))
+				panic(fmt.Sprintf("%s: expected OP_EXTRAARG as next instruction, found %s", op, i2.GetOpCode()))
 			} else {
 				s.CI.PC++
 				ax := i2.GetArgAx()
 				*a = s.CI.Cl.P.Ks[ax]
-				fmt.Printf("%s : ax=%v a=%v\n", i.GetOpCode(), ax, *a)
+				fmt.Printf("%s : ax=%v a=%v\n", op, ax, *a)
 			}
 
 		case types.OP_LOADBOOL:
@@ -72,7 +75,7 @@ newFrame:
 			if cb {
 				s.CI.PC++
 			}
-			fmt.Printf("%s : a=%v b=%v c=%v\n", i.GetOpCode(), *a, bb, cb)
+			fmt.Printf("%s : a=%v b=%v c=%v\n", op, *a, bb, cb)
 
 		case types.OP_LOADNIL:
 			ax := i.GetArgA()
@@ -81,41 +84,41 @@ newFrame:
 				a = &s.CI.Frame[ax+j]
 				*a = nil
 			}
-			fmt.Printf("%s : ax=%v bx=%v\n", i.GetOpCode(), ax, bx)
+			fmt.Printf("%s : ax=%v bx=%v\n", op, ax, bx)
 
 		case types.OP_GETUPVAL:
 			*a = *b
-			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *a, *b)
+			fmt.Printf("%s : A=%v B=%v\n", op, *a, *b)
 
 		case types.OP_GETTABUP:
 			t := (*b).(types.Table)
 			*a = t.Get(*c)
-			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, t.Get(*c), *a)
+			fmt.Printf("%s : k=%v v=%v ra=%v\n", op, *c, t.Get(*c), *a)
 
 		case types.OP_GETTABLE:
 			t := (*b).(types.Table)
 			*a = t.Get(*c)
-			fmt.Printf("%s : k=%v v=%v ra=%v\n", i.GetOpCode(), *c, t.Get(*c), *a)
+			fmt.Printf("%s : k=%v v=%v ra=%v\n", op, *c, t.Get(*c), *a)
 
 		case types.OP_SETTABUP:
 			t := (*a).(types.Table)
 			t.Set(*b, *c)
-			fmt.Printf("%s : k=%#v v=%#v\n", i.GetOpCode(), *b, *c)
+			fmt.Printf("%s : k=%#v v=%#v\n", op, *b, *c)
 
 		case types.OP_SETUPVAL:
 			*b = *a
-			fmt.Printf("%s : b=%v a=%v\n", i.GetOpCode(), *b, *a)
+			fmt.Printf("%s : b=%v a=%v\n", op, *b, *a)
 
 		case types.OP_SETTABLE:
 			t := (*a).(types.Table)
 			t.Set(*b, *c)
-			fmt.Printf("%s : k=%v v=%v t=%v\n", i.GetOpCode(), *b, *c, *a)
+			fmt.Printf("%s : k=%v v=%v t=%v\n", op, *b, *c, *a)
 
 		case types.OP_NEWTABLE:
 			t := types.NewTable()
 			// TODO : Encoded array and hash sizes (B and C) are ignored at the moment
 			*a = t
-			fmt.Printf("%s : t=%v b=%v c=%v\n", i.GetOpCode(), *a, *b, *c)
+			fmt.Printf("%s : t=%v b=%v c=%v\n", op, *a, *b, *c)
 
 		case types.OP_SELF:
 			ax := i.GetArgA()
@@ -124,53 +127,53 @@ newFrame:
 			a = &s.CI.Frame[ax]
 			t := (*b).(types.Table)
 			*a = t.Get(*c)
-			fmt.Printf("%s : a+1=%v a=%v c=%v\n", i.GetOpCode(), *b, t.Get(*c), *c)
+			fmt.Printf("%s : a+1=%v a=%v c=%v\n", op, *b, t.Get(*c), *c)
 
 			// TODO : For all operators, handle non-numeric data types (see Lua's conversion rules)
 		case types.OP_ADD:
 			bf := (*b).(float64)
 			cf := (*c).(float64)
 			*a = bf + cf
-			fmt.Printf("%s : b=%v + c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+			fmt.Printf("%s : b=%v + c=%v = a=%v\n", op, bf, cf, *a)
 
 		case types.OP_SUB:
 			bf := (*b).(float64)
 			cf := (*c).(float64)
 			*a = bf - cf
-			fmt.Printf("%s : b=%v - c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+			fmt.Printf("%s : b=%v - c=%v = a=%v\n", op, bf, cf, *a)
 
 		case types.OP_MUL:
 			bf := (*b).(float64)
 			cf := (*c).(float64)
 			*a = bf * cf
-			fmt.Printf("%s : b=%v * c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+			fmt.Printf("%s : b=%v * c=%v = a=%v\n", op, bf, cf, *a)
 
 		case types.OP_DIV:
 			bf := (*b).(float64)
 			cf := (*c).(float64)
 			*a = bf / cf
-			fmt.Printf("%s : b=%v ÷ c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+			fmt.Printf("%s : b=%v ÷ c=%v = a=%v\n", op, bf, cf, *a)
 
 		case types.OP_MOD:
 			bf := (*b).(float64)
 			cf := (*c).(float64)
 			*a = math.Mod(bf, cf)
-			fmt.Printf("%s : b=%v % c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+			fmt.Printf("%s : b=%v % c=%v = a=%v\n", op, bf, cf, *a)
 
 		case types.OP_POW:
 			bf := (*b).(float64)
 			cf := (*c).(float64)
 			*a = math.Pow(bf, cf)
-			fmt.Printf("%s : b=%v ^ c=%v = a=%v\n", i.GetOpCode(), bf, cf, *a)
+			fmt.Printf("%s : b=%v ^ c=%v = a=%v\n", op, bf, cf, *a)
 
 		case types.OP_UNM:
 			bf := (*b).(float64)
 			*a = -bf
-			fmt.Printf("%s : -b=%v\n", i.GetOpCode(), *a)
+			fmt.Printf("%s : -b=%v\n", op, *a)
 
 		case types.OP_NOT:
 			*a = isFalse(*b)
-			fmt.Printf("%s : !b=%v\n", i.GetOpCode(), *a)
+			fmt.Printf("%s : !b=%v\n", op, *a)
 
 		case types.OP_LEN:
 			switch v := (*b).(type) {
@@ -181,7 +184,7 @@ newFrame:
 			default:
 				// TODO : Metamethod	
 			}
-			fmt.Printf("%s : #b=%v\n", i.GetOpCode(), *a)
+			fmt.Printf("%s : #b=%v\n", op, *a)
 
 		case types.OP_CONCAT:
 			// TODO : Manage type conversion? For now, assume strings...
@@ -192,11 +195,11 @@ newFrame:
 				buf.WriteString(s.CI.Frame[j].(string))
 			}
 			*a = buf.String()
-			fmt.Printf("%s : b:%v .. c:%v = a:%v\n", i.GetOpCode(), *b, *c, *a)
+			fmt.Printf("%s : b:%v .. c:%v = a:%v\n", op, *b, *c, *a)
 
 		case types.OP_JMP:
 			ax, bx := doJump(s, i, 0)
-			fmt.Printf("%s : ax:%v PC+=%v\n", i.GetOpCode(), ax, bx)
+			fmt.Printf("%s : ax:%v PC+=%v\n", op, ax, bx)
 
 		case types.OP_EQ:
 			// Compares RK(B) and RK(C), which may be registers or constants. If the
@@ -211,12 +214,12 @@ newFrame:
 				// execution in the virtual machine. In effect, EQ, LT and LE must always be
 				// paired with a following JMP instruction.
 				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
-					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", i.GetOpCode(), i2.GetOpCode()))
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
 					doJump(s, i2, 1)
 				}
 			}
-			fmt.Printf("%s : b:%v ==? c:%v | a:%v\n", i.GetOpCode(), bf, cf, ax)
+			fmt.Printf("%s : b:%v ==? c:%v | a:%v\n", op, bf, cf, ax)
 
 		case types.OP_LT:
 			// See OP_EQ for details.
@@ -227,12 +230,12 @@ newFrame:
 				s.CI.PC++
 			} else {
 				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
-					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", i.GetOpCode(), i2.GetOpCode()))
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
 					doJump(s, i2, 1)
 				}
 			}
-			fmt.Printf("%s : b:%v <? c:%v | a:%v\n", i.GetOpCode(), bf, cf, ax)
+			fmt.Printf("%s : b:%v <? c:%v | a:%v\n", op, bf, cf, ax)
 
 		case types.OP_LE:
 			// See OP_EQ for details.
@@ -243,12 +246,39 @@ newFrame:
 				s.CI.PC++
 			} else {
 				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
-					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", i.GetOpCode(), i2.GetOpCode()))
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
 					doJump(s, i2, 1)
 				}
 			}
-			fmt.Printf("%s : b:%v <=? c:%v | a:%v\n", i.GetOpCode(), bf, cf, ax)
+			fmt.Printf("%s : b:%v <=? c:%v | a:%v\n", op, bf, cf, ax)
+
+		case types.OP_TEST:
+			cx, _ := i.GetArgC(false)
+			if (cx != 0) == isFalse(*a) {
+				s.CI.PC++
+			} else {
+				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
+				} else {
+					doJump(s, i2, 1)
+				}
+			}
+			fmt.Printf("%s : c:%v !=? a:%v\n", op, cx, *a)
+
+		case types.OP_TESTSET:
+			cx, _ := i.GetArgC(false)
+			if (cx != 0) == isFalse(*b) {
+				s.CI.PC++
+			} else {
+				*a = *b
+				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
+				} else {
+					doJump(s, i2, 1)
+				}
+			}
+			fmt.Printf("%s : c:%v !=? b:%v\n", op, cx, *b)
 
 		case types.OP_CALL:
 			/*
@@ -269,21 +299,21 @@ newFrame:
 			*/
 			if f, ok := (*a).(types.GoFunc); ok {
 				n := f(s)
-				fmt.Printf("%s : %d\n", i.GetOpCode(), n)
+				fmt.Printf("%s : %d\n", op, n)
 			} else {
-				fmt.Printf("%s : Ignored as not a GoFunc, not implemented yet.\n", i.GetOpCode())
+				fmt.Printf("%s : Ignored as not a GoFunc, not implemented yet.\n", op)
 			}
 
 		case types.OP_RETURN:
 			if s.CI = s.CI.Prev; s.CI == nil {
-				fmt.Printf("%s\n", i.GetOpCode())
+				fmt.Printf("%s\n", op)
 				return
 			}
-			fmt.Printf("%s : Back to previous call\n", i.GetOpCode())
+			fmt.Printf("%s : Back to previous call\n", op)
 			goto newFrame
 
 		default:
-			fmt.Printf("Ignore %s\n", i.GetOpCode())
+			fmt.Printf("Ignore %s\n", op)
 		}
 
 	}
@@ -310,12 +340,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_TEST,
-	        if (GETARG_C(i) ? l_isfalse(ra) : !l_isfalse(ra))
-	            ci->u.l.savedpc++;
-	          else
-	          donextjump(ci);
-	      )
 	      vmcase(OP_TESTSET,
 	        TValue *rb = RB(i);
 	        if (GETARG_C(i) ? l_isfalse(rb) : !l_isfalse(rb))
