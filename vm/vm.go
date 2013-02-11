@@ -297,6 +297,22 @@ newFrame:
 				CALL always updates the top of stack value. CALL, RETURN, VARARG
 				and SETLIST can use multiple values (up to the top of the stack.)
 			*/
+			ax := i.GetArgA()
+			nParms, _ := i.GetArgB(false)
+			nRets, _ := i.GetArgC(false) - 1
+			if nParms != 0 {
+				s.Stack.Top = ax + nParms
+			}
+			// Else, it is because last param to this call was a func call with unknown 
+			// number of results, so this call actually set the Top to whatever it had to be.
+
+			// TODO : See luaD_precall in ldo.c
+			switch f := (*a).(type) {
+			case types.GoFunc:
+				// Go function call
+			case *types.Closure:
+				// Lune function call
+			}
 			if f, ok := (*a).(types.GoFunc); ok {
 				n := f(s)
 				fmt.Printf("%s : %d\n", op, n)
@@ -340,15 +356,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_TESTSET,
-	        TValue *rb = RB(i);
-	        if (GETARG_C(i) ? l_isfalse(rb) : !l_isfalse(rb))
-	          ci->u.l.savedpc++;
-	        else {
-	          setobjs2s(L, ra, rb);
-	          donextjump(ci);
-	        }
-	      )
 	      vmcase(OP_CALL,
 	        int b = GETARG_B(i);
 	        int nresults = GETARG_C(i) - 1;
