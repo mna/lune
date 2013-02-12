@@ -55,6 +55,13 @@ func (s *Stack) DumpStack() {
 			fmt.Println(i, v)
 		}
 	}
+	for j := len(s.stk); j <= s.Top; j++ {
+		if j == s.Top {
+			fmt.Println(" top->", j)
+		} else {
+			fmt.Println("      ", j)
+		}
+	}
 }
 
 func NewState(entryPoint *Prototype) *State {
@@ -79,7 +86,7 @@ func NewState(entryPoint *Prototype) *State {
 	return s
 }
 
-func (s *State) NewCallInfo(cl *Closure, idx int) {
+func (s *State) NewCallInfo(cl *Closure, idx int, nRets int) {
 	// Make sure the stack has enough slots
 	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
 
@@ -92,7 +99,7 @@ func (s *State) NewCallInfo(cl *Closure, idx int) {
 	ci := new(CallInfo)
 	ci.Cl = cl
 	ci.FuncIndex = idx
-	ci.NumResults = 0 // TODO : For now, ignore, someday will be passed
+	ci.NumResults = nRets
 	ci.CallStatus = 0 // TODO : For now, ignore
 	ci.PC = 0
 	ci.Base = idx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday

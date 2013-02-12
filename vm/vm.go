@@ -50,7 +50,7 @@ func Execute(s *types.State) {
 	var a, b, c *types.Value
 
 	// Start with entry point (position 0)
-	s.NewCallInfo(s.Stack.Get(0).(*types.Closure), 0)
+	s.NewCallInfo(s.Stack.Get(0).(*types.Closure), 0, 0)
 
 newFrame:
 	for {
@@ -317,12 +317,38 @@ newFrame:
 				callGoFunc(s, f, s.CI.Base+ax+1, nRets)
 			case *types.Closure:
 				// Lune function call
-				s.NewCallInfo(f, s.CI.Base+ax)
+				s.NewCallInfo(f, s.CI.Base+ax, nRets)
 				goto newFrame
 			}
 			fmt.Printf("%s\n", op)
 
 		case types.OP_RETURN:
+			ax := i.GetArgA()
+			bx, _ := i.GetArgB(false)
+			if bx != 0 {
+				s.Stack.Top = s.CI.Base + ax + bx - 1
+			}
+			if len(s.CI.Cl.P.Protos) > 0 {
+				// TODO : Close upvalues
+			}
+			// TODO : See luaD_poscall in ldo.c, the hook magic is not implemented for now
+			/*
+			   vmcasenb(OP_RETURN,
+			     int b = GETARG_B(i);
+			     if (b != 0) L->top = ra+b-1;
+			     if (cl->p->sizep > 0) luaF_close(L, base);
+			     b = luaD_poscall(L, ra);
+			     if (!(ci->callstatus & CIST_REENTRY))  // 'ci' still the called one 
+			       return;  // external invocation: return 
+			     else {  // invocation via reentry: continue execution 
+			       ci = L->ci;
+			       if (b) L->top = ci->top;
+			       lua_assert(isLua(ci));
+			       lua_assert(GET_OPCODE(*((ci)->u.l.savedpc - 1)) == OP_CALL);
+			       goto newframe;  // restart luaV_execute over new Lua function 
+			     }
+			   )
+			*/
 			if s.CI = s.CI.Prev; s.CI == nil {
 				fmt.Printf("%s\n", op)
 				return
