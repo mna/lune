@@ -20,7 +20,7 @@ const (
 	TTHREAD
 )
 
-type GoFunc func(*State) int
+type GoFunc func([]Value) []Value
 
 /*
   Values are represented this way:

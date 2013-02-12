@@ -130,7 +130,7 @@ func (i Instruction) GetArgs(s *State) (a, b, c *Value) {
 
 			if op == OP_GETTABUP || op == OP_GETUPVAL || op == OP_SETUPVAL {
 				b = &s.CI.Cl.UpVals[bx]
-			} else if bm == OpArgK && bk {
+			} else if bk || op == OP_LOADK {
 				b = &s.CI.Cl.P.Ks[bx]
 			} else {
 				b = &s.CI.Frame[bx]
@@ -140,13 +140,17 @@ func (i Instruction) GetArgs(s *State) (a, b, c *Value) {
 			cm := op.GetCMode()
 			if cm != OpArgN {
 				cx, ck = i.GetArgC(true)
-				if cm == OpArgK && ck {
+				if ck {
 					c = &s.CI.Cl.P.Ks[cx]
 				} else {
 					c = &s.CI.Frame[cx]
 				}
 			}
 		}
+	}
+
+	if op == OP_LOADK {
+		fmt.Printf("ax:%d, bx:%d-bk:%v, cx:%d-ck:%v\n", ax, bx, bk, cx, ck)
 	}
 
 	// TODO : Doesn't seem like what AMode means...

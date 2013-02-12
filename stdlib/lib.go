@@ -13,8 +13,13 @@ func OpenLibs(t types.Table) {
 	t[types.Value("io")] = types.Value(libT)
 }
 
-func ioWrite(s *types.State) int {
-  //nArgs := s.Stack.Top - s.CI.Base
-	fmt.Println(">> In Go!")
-	return 0
+func ioWrite(in []types.Value) []types.Value {
+	ifs := make([]interface{}, len(in)+2)
+	ifs = append(ifs, ">>")
+	for _, v := range in {
+		ifs = append(ifs, v)
+	}
+	ifs = append(ifs, "<<")
+	fmt.Print(ifs...)
+	return nil
 }

@@ -33,7 +33,7 @@ func (s *Stack) Push(v Value) {
 }
 
 func (s *Stack) checkStack(needed byte) {
-	missing := (s.Top + int(needed) + 1) - cap(s.stk)
+	missing := (s.Top + int(needed)) - cap(s.stk)
 	for i := 0; i < missing; i++ {
 		var v Value
 		v = nil
@@ -44,6 +44,11 @@ func (s *Stack) checkStack(needed byte) {
 func (s *Stack) DumpStack() {
 	fmt.Println("*** DUMP STACK ***")
 	for i, v := range s.stk {
+		if i == s.Top {
+			fmt.Print(" top-> ")
+		} else {
+			fmt.Print("       ")
+		}
 		if f, ok := v.(*Closure); ok {
 			fmt.Println(i, f.P.Source, f.P.Meta.LineDefined)
 		} else {
@@ -69,33 +74,29 @@ func NewState(entryPoint *Prototype) *State {
 	}
 
 	// Push the closure on the stack
-	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
+	s.Stack.checkStack(cl.P.Meta.MaxStackSize + 1) // +1 for the closure itself
 	s.Stack.Push(cl)
 	return s
 }
 
-func (s *State) NewCallInfo(fIdx int, prev *CallInfo) {
-	// Get the function's closure at this stack index
-	f := s.Stack.Get(fIdx)
-	cl := f.(*Closure)
-
+func (s *State) NewCallInfo(cl *Closure, idx int) {
 	// Make sure the stack has enough slots
 	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
 
 	// Complete the arguments
-	n := s.Stack.Top - fIdx - 1
+	n := s.Stack.Top - idx - 1
 	for ; n < int(cl.P.Meta.NumParams); n++ {
 		s.Stack.Push(nil)
 	}
 
 	ci := new(CallInfo)
 	ci.Cl = cl
-	ci.FuncIndex = fIdx
+	ci.FuncIndex = idx
 	ci.NumResults = 0 // TODO : For now, ignore, someday will be passed
 	ci.CallStatus = 0 // TODO : For now, ignore
 	ci.PC = 0
-	ci.Base = fIdx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday
-	ci.Prev = prev
+	ci.Base = idx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday
+	ci.Prev = s.CI
 	ci.Frame = s.Stack.stk[ci.Base:]
 
 	s.CI = ci

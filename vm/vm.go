@@ -28,11 +28,29 @@ func doJump(s *types.State, i types.Instruction, e int) (ax, bx int) {
 	return
 }
 
+func callGoFunc(s *types.State, f types.GoFunc, base, nRets int) {
+	var in []types.Value
+	for i := base; i < s.Stack.Top; i++ {
+		in = append(in, s.Stack.Get(i))
+	}
+	out := f(in)
+	// Out values replace the stack values starting at the Go Func index (base - 1)
+	// nRets values are expected, stop at this count, and fill with nils if necessary
+	s.Stack.Top = base - 1
+	for i := 0; i < nRets; i++ {
+		if i < len(out) {
+			s.Stack.Push(out[i])
+		} else {
+			s.Stack.Push(nil)
+		}
+	}
+}
+
 func Execute(s *types.State) {
 	var a, b, c *types.Value
 
 	// Start with entry point (position 0)
-	s.NewCallInfo(0, nil)
+	s.NewCallInfo(s.Stack.Get(0).(*types.Closure), 0)
 
 newFrame:
 	for {
@@ -280,28 +298,14 @@ newFrame:
 			}
 			fmt.Printf("%s : c:%v !=? b:%v\n", op, cx, *b)
 
-		case types.OP_CALL:
-			/*
-				CALL A B C R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
-				Performs a function call, with register R(A) holding the reference to the
-				function object to be called. Parameters to the function are placed in the
-				registers following R(A). If B is 1, the function has no parameters. If B is 2
-				or more, there are (B-1) parameters.
-				If B is 0, the function parameters range from R(A+1) to the top of the stack.
-				This form is used when the last expression in the parameter list is a
-				function call, so the number of actual parameters is indeterminate.
-				Results returned by the function call is placed in a range of registers
-				starting from R(A). If C is 1, no return results are saved. If C is 2 or more,
-				(C-1) return values are saved. If C is 0, then multiple return results are
-				saved, depending on the called function.
-				CALL always updates the top of stack value. CALL, RETURN, VARARG
-				and SETLIST can use multiple values (up to the top of the stack.)
-			*/
+		case types.OP_CALL, types.OP_TAILCALL: // TODO : For now, no tail call optimization
 			ax := i.GetArgA()
 			nParms, _ := i.GetArgB(false)
-			nRets, _ := i.GetArgC(false) - 1
+			nRets, _ := i.GetArgC(false)
+			nRets--
 			if nParms != 0 {
-				s.Stack.Top = ax + nParms
+				// No parms: B=1, otherwise B-1 parms
+				s.Stack.Top = s.CI.Base + ax + nParms
 			}
 			// Else, it is because last param to this call was a func call with unknown 
 			// number of results, so this call actually set the Top to whatever it had to be.
@@ -310,15 +314,13 @@ newFrame:
 			switch f := (*a).(type) {
 			case types.GoFunc:
 				// Go function call
+				callGoFunc(s, f, s.CI.Base+ax+1, nRets)
 			case *types.Closure:
 				// Lune function call
+				s.NewCallInfo(f, s.CI.Base+ax)
+				goto newFrame
 			}
-			if f, ok := (*a).(types.GoFunc); ok {
-				n := f(s)
-				fmt.Printf("%s : %d\n", op, n)
-			} else {
-				fmt.Printf("%s : Ignored as not a GoFunc, not implemented yet.\n", op)
-			}
+			fmt.Printf("%s\n", op)
 
 		case types.OP_RETURN:
 			if s.CI = s.CI.Prev; s.CI == nil {
@@ -356,20 +358,6 @@ newFrame:
 	    lua_assert(base == ci->u.l.base);
 	    lua_assert(base <= L->top && L->top < L->stack + L->stacksize);
 	    vmdispatch (GET_OPCODE(i)) {
-	      vmcase(OP_CALL,
-	        int b = GETARG_B(i);
-	        int nresults = GETARG_C(i) - 1;
-	        if (b != 0) L->top = ra+b;  // else previous instruction set top 
-	        if (luaD_precall(L, ra, nresults)) {  // C function? 
-	          if (nresults >= 0) L->top = ci->top;  // adjust results 
-	          base = ci->u.l.base;
-	        }
-	        else {  // Lua function 
-	          ci = L->ci;
-	          ci->callstatus |= CIST_REENTRY;
-	          goto newframe;  // restart luaV_execute over new Lua function 
-	        }
-	      )
 	      vmcase(OP_TAILCALL,
 	        int b = GETARG_B(i);
 	        if (b != 0) L->top = ra+b;  // else previous instruction set top 
