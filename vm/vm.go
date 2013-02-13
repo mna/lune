@@ -363,6 +363,26 @@ newFrame:
 				goto newFrame
 			}
 
+		case types.OP_FORLOOP:
+			ax := i.GetArgA()
+			step := s.CI.Frame[ax+2].(float64)
+			idx := s.CI.Frame[ax].(float64) + step
+			limit := s.CI.Frame[ax+1].(float64)
+			if 0 < step {
+				if idx <= limit {
+					s.CI.PC += i.GetArgsBx()
+					s.CI.Frame[ax] = idx
+					s.CI.Frame[ax+3] = idx
+				}
+			} else {
+				if limit <= idx {
+					s.CI.PC += i.GetArgsBx()
+					s.CI.Frame[ax] = idx
+					s.CI.Frame[ax+3] = idx
+				}
+			}
+			fmt.Printf("%s : step:%v idx:%v limit:%v\n", op, step, idx, limit)
+
 		default:
 			fmt.Printf("Ignore %s\n", op)
 		}
@@ -418,32 +438,6 @@ newFrame:
 	          ci = L->ci = oci;  // remove new frame 
 	          lua_assert(L->top == oci->u.l.base + getproto(ofunc)->maxstacksize);
 	          goto newframe;  // restart luaV_execute over new Lua function 
-	        }
-	      )
-	      vmcasenb(OP_RETURN,
-	        int b = GETARG_B(i);
-	        if (b != 0) L->top = ra+b-1;
-	        if (cl->p->sizep > 0) luaF_close(L, base);
-	        b = luaD_poscall(L, ra);
-	        if (!(ci->callstatus & CIST_REENTRY))  // 'ci' still the called one 
-	          return;  // external invocation: return 
-	        else {  // invocation via reentry: continue execution 
-	          ci = L->ci;
-	          if (b) L->top = ci->top;
-	          lua_assert(isLua(ci));
-	          lua_assert(GET_OPCODE(*((ci)->u.l.savedpc - 1)) == OP_CALL);
-	          goto newframe;  // restart luaV_execute over new Lua function 
-	        }
-	      )
-	      vmcase(OP_FORLOOP,
-	        lua_Number step = nvalue(ra+2);
-	        lua_Number idx = luai_numadd(L, nvalue(ra), step); // increment index 
-	        lua_Number limit = nvalue(ra+1);
-	        if (luai_numlt(L, 0, step) ? luai_numle(L, idx, limit)
-	                                   : luai_numle(L, limit, idx)) {
-	          ci->u.l.savedpc += GETARG_sBx(i);  // jump back 
-	          setnvalue(ra, idx);  // update internal index... 
-	          setnvalue(ra+3, idx);  // ...and external index 
 	        }
 	      )
 	      vmcase(OP_FORPREP,
