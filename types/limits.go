@@ -38,4 +38,6 @@ const (
 	MAXARG_C   = ((1 << sizeC) - 1)
 
 	MAXINDEXRK = (BITRK - 1)
+
+	LUNE_MULTRET = -1
 )

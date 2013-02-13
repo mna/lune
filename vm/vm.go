@@ -323,38 +323,45 @@ newFrame:
 			fmt.Printf("%s\n", op)
 
 		case types.OP_RETURN:
-			ax := i.GetArgA()
+			ax := s.CI.Base + i.GetArgA()
 			bx, _ := i.GetArgB(false)
 			if bx != 0 {
-				s.Stack.Top = s.CI.Base + ax + bx - 1
+				s.Stack.Top = ax + bx - 1
 			}
 			if len(s.CI.Cl.P.Protos) > 0 {
 				// TODO : Close upvalues
 			}
 			// TODO : See luaD_poscall in ldo.c, the hook magic is not implemented for now
-			/*
-			   vmcasenb(OP_RETURN,
-			     int b = GETARG_B(i);
-			     if (b != 0) L->top = ra+b-1;
-			     if (cl->p->sizep > 0) luaF_close(L, base);
-			     b = luaD_poscall(L, ra);
-			     if (!(ci->callstatus & CIST_REENTRY))  // 'ci' still the called one 
-			       return;  // external invocation: return 
-			     else {  // invocation via reentry: continue execution 
-			       ci = L->ci;
-			       if (b) L->top = ci->top;
-			       lua_assert(isLua(ci));
-			       lua_assert(GET_OPCODE(*((ci)->u.l.savedpc - 1)) == OP_CALL);
-			       goto newframe;  // restart luaV_execute over new Lua function 
-			     }
-			   )
-			*/
-			if s.CI = s.CI.Prev; s.CI == nil {
+			res := s.CI.FuncIndex
+			wanted := s.CI.NumResults
+			s.CI = s.CI.Prev
+			// Set results in the right slots on the stack
+			var j int
+			for j = wanted; j != 0 && ax < s.Stack.Top; j-- {
+				s.Stack.Stk[res] = s.Stack.Stk[ax]
+				res, ax = res+1, ax+1
+			}
+			// Complete missing results with nils
+			for ; j > 0; j-- {
+				s.Stack.Stk[res] = nil
+				res++
+			}
+			s.Stack.Top = res
+			bx = wanted - types.LUNE_MULTRET
+			if s.CI == nil {
+				// TODO : Is this equivalent to Lua's check of CIST_REENTRY?
 				fmt.Printf("%s\n", op)
 				return
+			} else {
+				if bx != 0 {
+					// TODO : Set Top back to CI.Top? I don't have a CI.Top!
+				}
+				if prevOp := s.CI.Cl.P.Code[s.CI.PC-1].GetOpCode(); prevOp != types.OP_CALL {
+					panic(fmt.Sprintf("expected CALL to be previous instruction in RETURNed frame, got %s", prevOp))
+				}
+				fmt.Printf("%s : back to caller frame\n", op)
+				goto newFrame
 			}
-			fmt.Printf("%s : Back to previous call\n", op)
-			goto newFrame
 
 		default:
 			fmt.Printf("Ignore %s\n", op)

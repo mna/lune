@@ -10,7 +10,7 @@ import (
 
 type Stack struct {
 	Top int // First free slot
-	stk []Value
+	Stk []Value
 }
 
 func newStack() *Stack {
@@ -24,26 +24,26 @@ type State struct {
 }
 
 func (s *Stack) Get(idx int) Value {
-	return s.stk[idx]
+	return s.Stk[idx]
 }
 
 func (s *Stack) Push(v Value) {
-	s.stk[s.Top] = v
+	s.Stk[s.Top] = v
 	s.Top++
 }
 
 func (s *Stack) checkStack(needed byte) {
-	missing := (s.Top + int(needed)) - cap(s.stk)
+	missing := (s.Top + int(needed)) - cap(s.Stk)
 	for i := 0; i < missing; i++ {
 		var v Value
 		v = nil
-		s.stk = append(s.stk, v)
+		s.Stk = append(s.Stk, v)
 	}
 }
 
 func (s *Stack) DumpStack() {
 	fmt.Println("*** DUMP STACK ***")
-	for i, v := range s.stk {
+	for i, v := range s.Stk {
 		if i == s.Top {
 			fmt.Print(" top-> ")
 		} else {
@@ -55,7 +55,7 @@ func (s *Stack) DumpStack() {
 			fmt.Println(i, v)
 		}
 	}
-	for j := len(s.stk); j <= s.Top; j++ {
+	for j := len(s.Stk); j <= s.Top; j++ {
 		if j == s.Top {
 			fmt.Println(" top->", j)
 		} else {
@@ -104,7 +104,7 @@ func (s *State) NewCallInfo(cl *Closure, idx int, nRets int) {
 	ci.PC = 0
 	ci.Base = idx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday
 	ci.Prev = s.CI
-	ci.Frame = s.Stack.stk[ci.Base:]
+	ci.Frame = s.Stack.Stk[ci.Base:]
 
 	s.CI = ci
 }
