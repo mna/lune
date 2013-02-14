@@ -383,6 +383,16 @@ newFrame:
 			}
 			fmt.Printf("%s : step:%v idx:%v limit:%v\n", op, step, idx, limit)
 
+		case types.OP_FORPREP:
+			ax := i.GetArgA()
+			// TODO : Conversion, validate that it can be converted to a number (for now, assume number)
+			init := (*a).(float64)
+			limit := s.CI.Frame[ax+1].(float64)
+			step := s.CI.Frame[ax+2].(float64)
+			*a = init - step
+			s.CI.PC += i.GetArgsBx()
+			fmt.Printf("%s : init:%v limit:%v step:%v PC+=%v\n", op, init, limit, step, i.GetArgsBx())
+
 		default:
 			fmt.Printf("Ignore %s\n", op)
 		}
@@ -439,19 +449,6 @@ newFrame:
 	          lua_assert(L->top == oci->u.l.base + getproto(ofunc)->maxstacksize);
 	          goto newframe;  // restart luaV_execute over new Lua function 
 	        }
-	      )
-	      vmcase(OP_FORPREP,
-	        const TValue *init = ra;
-	        const TValue *plimit = ra+1;
-	        const TValue *pstep = ra+2;
-	        if (!tonumber(init, ra))
-	          luaG_runerror(L, LUA_QL("for") " initial value must be a number");
-	        else if (!tonumber(plimit, ra+1))
-	          luaG_runerror(L, LUA_QL("for") " limit must be a number");
-	        else if (!tonumber(pstep, ra+2))
-	          luaG_runerror(L, LUA_QL("for") " step must be a number");
-	        setnvalue(ra, luai_numsub(L, nvalue(ra), nvalue(pstep)));
-	        ci->u.l.savedpc += GETARG_sBx(i);
 	      )
 	      vmcasenb(OP_TFORCALL,
 	        StkId cb = ra + 3;  // call base 
