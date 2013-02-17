@@ -127,24 +127,30 @@ newFrame:
 			fmt.Printf("%s\tR(A)=%v R(B)=%v RK(C)=%v\n", op, *a, t, *c)
 
 		case types.OP_SETTABUP:
+			// A B C | UpValue[A][RK(B)] := RK(C) 
 			t := (*a).(types.Table)
 			t.Set(*b, *c)
-			fmt.Printf("%s : k=%#v v=%#v\n", op, *b, *c)
+			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *b, *c)
 
 		case types.OP_SETUPVAL:
+			// A B | UpValue[B] := R(A)
 			*b = *a
-			fmt.Printf("%s : b=%v a=%v\n", op, *b, *a)
+			fmt.Printf("%s\tR(A)=%v U(B)=%v\n", op, *a, *b)
 
 		case types.OP_SETTABLE:
+			// A B C | R(A)[RK(B)] := RK(C)
 			t := (*a).(types.Table)
 			t.Set(*b, *c)
-			fmt.Printf("%s : k=%v v=%v t=%v\n", op, *b, *c, *a)
+			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *b, *c)
 
 		case types.OP_NEWTABLE:
+			// A B C | R(A) := {} (size = B,C)
 			t := types.NewTable()
+			bx, _ := i.GetArgB(false)
+			cx, _ := i.GetArgC(false)
 			// TODO : Encoded array and hash sizes (B and C) are ignored at the moment
 			*a = t
-			fmt.Printf("%s : t=%v b=%v c=%v\n", op, *a, *b, *c)
+			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, t, bx, cx)
 
 		case types.OP_SELF:
 			ax := i.GetArgA()
