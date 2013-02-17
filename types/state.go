@@ -8,42 +8,27 @@ import (
 // required because the interface may hold the value inline for numbers and bools):
 // http://play.golang.org/p/e2Ptu8puSZ
 
-type Stack struct {
-	Top int // First free slot
-	Stk []Value
-}
-
-func newStack() *Stack {
-	return new(Stack)
-}
+const (
+	_INITIAL_STACK_CAP = 2
+)
 
 type State struct {
-	Stack   *Stack
+	Stack   []Value
+	Top     int
 	Globals Table
 	CI      *CallInfo
 }
 
-func (s *Stack) Get(idx int) Value {
-	return s.Stk[idx]
-}
-
-func (s *Stack) Push(v Value) {
-	s.Stk[s.Top] = v
-	s.Top++
-}
-
-func (s *Stack) checkStack(needed byte) {
-	missing := (s.Top + int(needed)) - cap(s.Stk)
+func (s *State) checkStack(needed byte) {
+	missing := (s.Top + int(needed)) - cap(s.Stack)
 	for i := 0; i < missing; i++ {
-		var v Value
-		v = nil
-		s.Stk = append(s.Stk, v)
+		s.Stack = append(s.Stack, nil)
 	}
 }
 
-func (s *Stack) DumpStack() {
-	fmt.Println("*** DUMP STACK ***")
-	for i, v := range s.Stk {
+func (s *State) DumpStack() {
+	fmt.Println("*** STACK ***")
+	for i, v := range s.Stack {
 		if i == s.Top {
 			fmt.Print(" top-> ")
 		} else {
@@ -55,7 +40,7 @@ func (s *Stack) DumpStack() {
 			fmt.Println(i, v)
 		}
 	}
-	for j := len(s.Stk); j <= s.Top; j++ {
+	for j := len(s.Stack); j <= s.Top; j++ {
 		if j == s.Top {
 			fmt.Println(" top->", j)
 		} else {
@@ -66,7 +51,7 @@ func (s *Stack) DumpStack() {
 
 func NewState(entryPoint *Prototype) *State {
 	s := &State{
-		Stack:   newStack(),
+		Stack:   make([]Value, _INITIAL_STACK_CAP),
 		Globals: NewTable(),
 	}
 
@@ -81,7 +66,7 @@ func NewState(entryPoint *Prototype) *State {
 	}
 
 	// Push the closure on the stack
-	s.Stack.checkStack(cl.P.Meta.MaxStackSize + 1) // +1 for the closure itself
+	s.checkStack(cl.P.Meta.MaxStackSize + 1) // +1 for the closure itself
 	s.Stack.Push(cl)
 	return s
 }

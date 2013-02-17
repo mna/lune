@@ -64,14 +64,17 @@ newFrame:
 
 		switch op {
 		case types.OP_MOVE:
+			// A B | R(A) := R(B)
 			*a = *b
-			fmt.Printf("%s : A=%v B=%v\n", i.GetOpCode(), *a, *b)
+			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *a, *b)
 
 		case types.OP_LOADK:
+			// A Bx | R(A) := Kst(Bx)
 			*a = *b
-			fmt.Printf("%s : A=%v B=%v\n", op, *a, *b)
+			fmt.Printf("%s\tR(A)=%v Kst(Bx)=%v\n", op, *a, *b)
 
 		case types.OP_LOADKx:
+			// A | R(A) := Kst(extra arg)
 			// Special instruction: must always be followed by OP_EXTRAARG
 			if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_EXTRAARG {
 				panic(fmt.Sprintf("%s: expected OP_EXTRAARG as next instruction, found %s", op, i2.GetOpCode()))
@@ -79,10 +82,11 @@ newFrame:
 				s.CI.PC++
 				ax := i2.GetArgAx()
 				*a = s.CI.Cl.P.Ks[ax]
-				fmt.Printf("%s : ax=%v a=%v\n", op, ax, *a)
+				fmt.Printf("%s\tR(A)=%v EXTRAARG=%v\n", op, *a, ax)
 			}
 
 		case types.OP_LOADBOOL:
+			// A B C | R(A) := (Bool)B; if (C) PC++
 			bx, _ := i.GetArgB(false)
 			bb := bx != 0
 			*a = bb
@@ -93,30 +97,34 @@ newFrame:
 			if cb {
 				s.CI.PC++
 			}
-			fmt.Printf("%s : a=%v b=%v c=%v\n", op, *a, bb, cb)
+			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *a, bb, cb)
 
 		case types.OP_LOADNIL:
+			// A B | R(A) := ... := R(B) := nil
 			ax := i.GetArgA()
 			bx, _ := i.GetArgB(false)
 			for j := 0; j <= bx; j++ {
 				a = &s.CI.Frame[ax+j]
 				*a = nil
 			}
-			fmt.Printf("%s : ax=%v bx=%v\n", op, ax, bx)
+			fmt.Printf("%s\tA=%v B=%v\n", op, ax, bx)
 
 		case types.OP_GETUPVAL:
+			// A B | R(A) := UpValue[B]
 			*a = *b
-			fmt.Printf("%s : A=%v B=%v\n", op, *a, *b)
+			fmt.Printf("%s\tA=%v B=%v\n", op, *a, *b)
 
 		case types.OP_GETTABUP:
+			// A B C | R(A) := UpValue[B][RK(C)]
 			t := (*b).(types.Table)
 			*a = t.Get(*c)
-			fmt.Printf("%s : k=%v v=%v ra=%v\n", op, *c, t.Get(*c), *a)
+			fmt.Printf("%s\tR(A)=%v U(B)=%v RK(C)=%v\n", op, *a, t, *c)
 
 		case types.OP_GETTABLE:
+			// A B C | R(A) := R(B)[RK(C)]
 			t := (*b).(types.Table)
 			*a = t.Get(*c)
-			fmt.Printf("%s : k=%v v=%v ra=%v\n", op, *c, t.Get(*c), *a)
+			fmt.Printf("%s\tR(A)=%v R(B)=%v RK(C)=%v\n", op, *a, t, *c)
 
 		case types.OP_SETTABUP:
 			t := (*a).(types.Table)
