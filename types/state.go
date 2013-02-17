@@ -67,18 +67,20 @@ func NewState(entryPoint *Prototype) *State {
 
 	// Push the closure on the stack
 	s.checkStack(cl.P.Meta.MaxStackSize + 1) // +1 for the closure itself
-	s.Stack.Push(cl)
+	s.Stack[s.Top] = cl
+	s.Top++
 	return s
 }
 
 func (s *State) NewCallInfo(cl *Closure, idx int, nRets int) {
 	// Make sure the stack has enough slots
-	s.Stack.checkStack(cl.P.Meta.MaxStackSize)
+	s.checkStack(cl.P.Meta.MaxStackSize)
 
 	// Complete the arguments
-	n := s.Stack.Top - idx - 1
+	n := s.Top - idx - 1
 	for ; n < int(cl.P.Meta.NumParams); n++ {
-		s.Stack.Push(nil)
+		s.Stack[s.Top] = nil
+		s.Top++
 	}
 
 	ci := new(CallInfo)
@@ -89,7 +91,7 @@ func (s *State) NewCallInfo(cl *Closure, idx int, nRets int) {
 	ci.PC = 0
 	ci.Base = idx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday
 	ci.Prev = s.CI
-	ci.Frame = s.Stack.Stk[ci.Base:]
+	ci.Frame = s.Stack[ci.Base:]
 
 	s.CI = ci
 }

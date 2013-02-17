@@ -109,7 +109,7 @@ func (i Instruction) GetArgs(s *State) (a, b, c *Value) {
 	var ax, bx, cx int
 	var bk, ck bool
 
-	fmt.Printf("FRAME: %#v\n", s.CI.Frame)
+	//fmt.Printf("FRAME: %#v\n", s.CI.Frame)
 	op := i.GetOpCode()
 	om := op.GetOpMode()
 
@@ -147,10 +147,6 @@ func (i Instruction) GetArgs(s *State) (a, b, c *Value) {
 				}
 			}
 		}
-	}
-
-	if op == OP_LOADK {
-		fmt.Printf("ax:%d, bx:%d-bk:%v, cx:%d-ck:%v\n", ax, bx, bk, cx, ck)
 	}
 
 	// TODO : Doesn't seem like what AMode means...
