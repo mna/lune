@@ -223,34 +223,35 @@ newFrame:
 			}
 			fmt.Printf("%s\tA=%v RK(B)=%v RK(C)=%v\n", op, ax, *b, *c)
 
+		case types.OP_TEST:
+			// A C | if not (R(A) <=> C) then pc++
+			cx, _ := i.GetArgC(false)
+			if asBool(cx) == isFalse(*a) {
+				s.CI.PC++
+			} else {
+				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
+				} else {
+					doJump(s, i2, 1)
+				}
+			}
+			fmt.Printf("%s\tR(A)=%v C=%v\n", op, *a, cx)
+
+		case types.OP_TESTSET:
+			// A B C | if (R(B) <=> C) then R(A) := R(B) else pc++
+			cx, _ := i.GetArgC(false)
+			if asBool(cx) == isFalse(*b) {
+				s.CI.PC++
+			} else {
+				*a = *b
+				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
+					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
+				} else {
+					doJump(s, i2, 1)
+				}
+			}
+			fmt.Printf("%s\tR(A)=%v R(B)=%v C=%v\n", op, *a, *b, cx)
 			/*
-				case types.OP_TEST:
-					cx, _ := i.GetArgC(false)
-					if (cx != 0) == isFalse(*a) {
-						s.CI.PC++
-					} else {
-						if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
-							panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
-						} else {
-							doJump(s, i2, 1)
-						}
-					}
-					fmt.Printf("%s : c:%v !=? a:%v\n", op, cx, *a)
-
-				case types.OP_TESTSET:
-					cx, _ := i.GetArgC(false)
-					if (cx != 0) == isFalse(*b) {
-						s.CI.PC++
-					} else {
-						*a = *b
-						if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
-							panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
-						} else {
-							doJump(s, i2, 1)
-						}
-					}
-					fmt.Printf("%s : c:%v !=? b:%v\n", op, cx, *b)
-
 				case types.OP_CALL, types.OP_TAILCALL: // TODO : For now, no tail call optimization
 					ax := i.GetArgA()
 					nParms, _ := i.GetArgB(false)
