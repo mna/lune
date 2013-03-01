@@ -251,30 +251,38 @@ newFrame:
 				}
 			}
 			fmt.Printf("%s\tR(A)=%v R(B)=%v C=%v\n", op, *a, *b, cx)
-			/*
-				case types.OP_CALL, types.OP_TAILCALL: // TODO : For now, no tail call optimization
-					ax := i.GetArgA()
-					nParms, _ := i.GetArgB(false)
-					nRets, _ := i.GetArgC(false)
-					nRets--
-					if nParms != 0 {
-						// No parms: B=1, otherwise B-1 parms
-						s.Stack.Top = s.CI.Base + ax + nParms
-					}
-					// Else, it is because last param to this call was a func call with unknown 
-					// number of results, so this call actually set the Top to whatever it had to be.
 
-					// TODO : See luaD_precall in ldo.c
-					switch f := (*a).(type) {
-					case types.GoFunc:
-						// Go function call
-						callGoFunc(s, f, s.CI.Base+ax+1, nRets)
-					case *types.Closure:
-						// Lune function call
-						s.NewCallInfo(f, s.CI.Base+ax, nRets)
-						goto newFrame
-					}
-					fmt.Printf("%s\n", op)
+		case types.OP_CALL:
+			// A B C | R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
+			// CALL always updates the top of stack value.
+			// B=1 means no parameter. B=0 means up-to-top-of-stack parameters. B=2 means 1 parameter, and so on.
+			// C=1 means 1 return value. C=0 means multiple return values. C=2 means 1 return value, and so on.
+			ax := i.GetArgA()
+			bx, _ := i.GetArgB(false)
+			cx, _ := i.GetArgC(false)
+			nRets := cx - 1
+			if bx != 0 {
+				// Adjust top of stack, since we know exactly the number of arguments.
+				s.Top = s.CI.Base + ax + bx
+			}
+			// Else, it is because last param to this call was a func call with unknown 
+			// number of results, so this call actually set the Top to whatever it had to be.
+
+			// TODO : See luaD_precall in ldo.c, manage varargs (see adjust_varargs in ldo.c)
+			switch f := (*a).(type) {
+			case types.GoFunc:
+				// Go function call
+				callGoFunc(s, f, s.CI.Base+ax+1, nRets)
+			case *types.Closure:
+				// Lune function call
+				s.NewCallInfo(f, s.CI.Base+ax, nRets)
+				goto newFrame
+			}
+			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *a, bx, cx)
+
+			/*
+				case types.OP_TAILCALL:
+					panic("TAILCALL: not implemented")
 
 				case types.OP_RETURN:
 					ax := s.CI.Base + i.GetArgA()
@@ -348,8 +356,8 @@ newFrame:
 					fmt.Printf("%s : init:%v limit:%v step:%v PC+=%v\n", op, init, limit, step, i.GetArgsBx())
 			*/
 		default:
-			goto newFrame
 			fmt.Printf("Ignore %s\n", op)
+			goto newFrame
 		}
 	}
 }
