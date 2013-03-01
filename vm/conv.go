@@ -1,10 +1,16 @@
 package vm
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/PuerkitoBio/lune/types"
 	"math"
 	"strconv"
 )
+
+func asBool(i int) bool {
+	return i != 0
+}
 
 func isFalse(v types.Value) bool {
 	// Two values evaluate to False: nil and boolean false
@@ -79,6 +85,44 @@ func coerceToNumber(v types.Value) (float64, bool) {
 	panic("unreachable")
 }
 
+func coerceToString(v types.Value) (string, bool) {
+	switch bv := v.(type) {
+	case string:
+		return bv, true
+	case float64:
+		// First try as an int
+		vi := int64(bv)
+		if float64(vi) == bv {
+			return fmt.Sprintf("%d", vi), true
+		} else {
+			return fmt.Sprintf("%f", bv), true
+		}
+	default:
+		return "", false
+	}
+	panic("unreachable")
+}
+
+func coerceAndConcatenate(src []types.Value) types.Value {
+	var buf bytes.Buffer
+
+	// Start by the last two, up to the first (stop at i > 0 because the loop
+	// uses i and i-1, so the 0 position is concatenated at i=1 iteration)
+	for i := len(src) - 1; i > 0; i-- {
+		bs, bok := coerceToString(src[i])
+		cs, cok := coerceToString(src[i-1])
+		if bok && cok {
+			// Both are strings
+			// TODO : This will concatenate backwards...
+			buf.WriteString(bs)
+			buf.WriteString(cs)
+		} else {
+			// TODO : Metamethods
+		}
+	}
+	return buf.String()
+}
+
 func computeLength(v types.Value) float64 {
 	switch bv := v.(type) {
 	case types.Table:
@@ -89,4 +133,68 @@ func computeLength(v types.Value) float64 {
 		// TODO : Metamethod  
 	}
 	panic("unreachable")
+}
+
+func areEqual(v1, v2 types.Value) bool {
+	if t, ok := areSameType(v1, v2); !ok {
+		return false
+	} else if t == types.TNIL {
+		return true
+	}
+	return v1 == v2
+}
+
+func isLessEqual(l, r types.Value) bool {
+	if t, ok := areSameType(l, r); ok {
+		switch t {
+		case types.TNUMBER:
+			ln, rn := l.(float64), r.(float64)
+			return ln <= rn
+		case types.TSTRING:
+			ls, rs := l.(string), r.(string)
+			return ls <= rs
+		}
+	}
+	// Not same type or not two numbers/strings
+	// TODO : Metamethods, subtlety compared to LessThan, see lvm.c#luaV_lessequal
+	return false
+}
+
+func isLessThan(l, r types.Value) bool {
+	if t, ok := areSameType(l, r); ok {
+		switch t {
+		case types.TNUMBER:
+			ln, rn := l.(float64), r.(float64)
+			return ln < rn
+		case types.TSTRING:
+			ls, rs := l.(string), r.(string)
+			return ls < rs
+		}
+	}
+	// Not same type or not two numbers/strings
+	// TODO : Metamethods
+	return false
+}
+
+func areSameType(v1, v2 types.Value) (types.ValType, bool) {
+	var valTypes [2]types.ValType
+	var vals = [2]types.Value{v1, v2}
+
+	for i := 0; i < 2; i++ {
+		switch vals[i].(type) {
+		case nil:
+			valTypes[i] = types.TNIL
+		case bool:
+			valTypes[i] = types.TBOOL
+		case float64:
+			valTypes[i] = types.TNUMBER
+		case string:
+			valTypes[i] = types.TSTRING
+		case *types.Closure:
+			valTypes[i] = types.TFUNCTION
+		case *types.Table:
+			valTypes[i] = types.TTABLE
+		}
+	}
+	return valTypes[0], valTypes[0] == valTypes[1]
 }
