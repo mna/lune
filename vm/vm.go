@@ -5,6 +5,23 @@ import (
 	"github.com/PuerkitoBio/lune/types"
 )
 
+var (
+	_BINOPS = [...]byte{
+		types.OP_ADD: '+',
+		types.OP_SUB: '-',
+		types.OP_MUL: '*',
+		types.OP_DIV: '/',
+		types.OP_MOD: '%',
+		types.OP_POW: '^',
+	}
+
+	_CMPOPS = [...]func(types.Value, types.Value) bool{
+		types.OP_EQ: areEqual,
+		types.OP_LT: isLessThan,
+		types.OP_LE: isLessEqual,
+	}
+)
+
 func doJump(s *types.State, i types.Instruction, e int) (ax, bx int) {
 	ax = i.GetArgA()
 	if ax != 0 {
@@ -149,34 +166,15 @@ newFrame:
 			s.CI.Frame[ax] = t.Get(*c)
 			fmt.Printf("%s\tA=%v R(B)=%v RK(C)=%v\n", op, ax, t, *c)
 
-		case types.OP_ADD:
+		case types.OP_ADD, types.OP_SUB, types.OP_MUL, types.OP_DIV,
+			types.OP_MOD, types.OP_POW:
 			// A B C | R(A) := RK(B) + RK(C)
-			*a = coerceAndComputeBinaryOp('+', *b, *c)
-			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, *a, *b, *c)
-
-		case types.OP_SUB:
 			// A B C | R(A) := RK(B) - RK(C)
-			*a = coerceAndComputeBinaryOp('-', *b, *c)
-			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, *a, *b, *c)
-
-		case types.OP_MUL:
 			// A B C | R(A) := RK(B) * RK(C)
-			*a = coerceAndComputeBinaryOp('*', *b, *c)
-			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, *a, *b, *c)
-
-		case types.OP_DIV:
 			// A B C | R(A) := RK(B) ÷ RK(C)
-			*a = coerceAndComputeBinaryOp('/', *b, *c)
-			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, *a, *b, *c)
-
-		case types.OP_MOD:
 			// A B C | R(A) := RK(B) % RK(C)
-			*a = coerceAndComputeBinaryOp('%', *b, *c)
-			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, *a, *b, *c)
-
-		case types.OP_POW:
 			// A B C | R(A) := RK(B) ^ RK(C)
-			*a = coerceAndComputeBinaryOp('^', *b, *c)
+			*a = coerceAndComputeBinaryOp(_BINOPS[op], *b, *c)
 			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, *a, *b, *c)
 
 		case types.OP_UNM:
@@ -207,42 +205,12 @@ newFrame:
 			ax, bx := doJump(s, i, 0)
 			fmt.Printf("%s\tA=%v sBx=%v\n", op, ax, bx)
 
-		case types.OP_EQ:
+		case types.OP_EQ, types.OP_LT, types.OP_LE:
 			// A B C | if ((RK(B) == RK(C)) ~= A) then pc++
-			ax := i.GetArgA()
-			if areEqual(*b, *c) != asBool(ax) {
-				s.CI.PC++
-			} else {
-				// For the fall-through case, a JMP is always expected, in order to optimize
-				// execution in the virtual machine.
-				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
-					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
-				} else {
-					doJump(s, i2, 1)
-				}
-			}
-			fmt.Printf("%s\tA=%v RK(B)=%v RK(C)=%v\n", op, ax, *b, *c)
-
-		case types.OP_LT:
 			// A B C | if ((RK(B) <  RK(C)) ~= A) then pc++
-			ax := i.GetArgA()
-			if isLessThan(*b, *c) != asBool(ax) {
-				s.CI.PC++
-			} else {
-				// For the fall-through case, a JMP is always expected, in order to optimize
-				// execution in the virtual machine.
-				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
-					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
-				} else {
-					doJump(s, i2, 1)
-				}
-			}
-			fmt.Printf("%s\tA=%v RK(B)=%v RK(C)=%v\n", op, ax, *b, *c)
-
-		case types.OP_LE:
 			// A B C | if ((RK(B) <= RK(C)) ~= A) then pc++
 			ax := i.GetArgA()
-			if isLessEqual(*b, *c) != asBool(ax) {
+			if _CMPOPS[op](*b, *c) != asBool(ax) {
 				s.CI.PC++
 			} else {
 				// For the fall-through case, a JMP is always expected, in order to optimize
