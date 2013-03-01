@@ -24,7 +24,7 @@ var (
 
 func doJump(s *types.State, i types.Instruction, e int) (ax, bx int) {
 	ax = i.GetArgA()
-	if ax != 0 {
+	if asBool(ax) {
 		// TODO : Close upvalues - See dojump in lvm.c.
 	}
 	bx = i.GetArgsBx()
@@ -53,7 +53,7 @@ func callGoFunc(s *types.State, f types.GoFunc, base, nRets int) {
 }
 
 func Execute(s *types.State) {
-	var a, b, c *types.Value
+	//var a, b, c *types.Value
 
 	// Start with entry point (position 0)
 	s.NewCallInfo(s.Stack[0].(*types.Closure), 0, 0)
@@ -67,7 +67,7 @@ newFrame:
 		// TODO : Will fail big time here, when some opcodes are executed. OpMasks
 		// just doesn't do what I think it does.
 		// TODO : Make OpMasks smarter for my needs, and return ax, bx, cx too?
-		a, b, c = i.GetArgs(s)
+		args := i.GetArgs(s)
 
 		switch op {
 		case types.OP_MOVE:
@@ -95,16 +95,14 @@ newFrame:
 		case types.OP_LOADBOOL:
 			// A B C | R(A) := (Bool)B; if (C) PC++
 			bx, _ := i.GetArgB(false)
-			bb := bx != 0
-			*a = bb
+			*a = asBool(bx)
 
 			// Skip next instruction if C is true
 			cx, _ := i.GetArgC(false)
-			cb := cx != 0
-			if cb {
+			if asBool(cx) {
 				s.CI.PC++
 			}
-			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *a, bb, cb)
+			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *a, bx, cx)
 
 		case types.OP_LOADNIL:
 			// A B | R(A) := ... := R(B) := nil

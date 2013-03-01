@@ -1,11 +1,5 @@
 package types
 
-import (
-	"bytes"
-	"fmt"
-	"strings"
-)
-
 /*
   We assume that instructions are unsigned numbers.
   All instructions have an opcode in the first 6 bits.
@@ -45,43 +39,34 @@ func (i Instruction) GetArgA() int {
 	return getArg(i, posA, sizeA)
 }
 
-func getArgPossibleK(i Instruction, argNm byte, pos, size uint) (int, bool) {
-	var md OpArgMask
+func getArgPossibleK(i Instruction, pos, size uint) (int, bool) {
 	var k bool
 
 	arg := getArg(i, pos, size)
-	op := i.GetOpCode()
-	if argNm == 'B' {
-		md = op.GetBMode()
-	} else {
-		md = op.GetCMode()
-	}
-	if md == OpArgK && isK(arg) {
+	if isK(arg) {
 		k = true
 		arg = indexK(arg)
-	} else if md == OpArgN {
-		panic(fmt.Sprintf("unexpected use of %d in operator %s", argNm, op))
 	}
 	return arg, k
 }
 
 func (i Instruction) GetArgB(getK bool) (int, bool) {
 	if getK {
-		return getArgPossibleK(i, 'B', posB, sizeB)
+		return getArgPossibleK(i, posB, sizeB)
 	}
 	return getArg(i, posB, sizeB), false
 }
 
 func (i Instruction) GetArgC(getK bool) (int, bool) {
 	if getK {
-		return getArgPossibleK(i, 'C', posC, sizeC)
+		return getArgPossibleK(i, posC, sizeC)
 	}
 	return getArg(i, posC, sizeC), false
 }
 
 func (i Instruction) GetArgBx(getK bool) (int, bool) {
 	if getK {
-		return getArgPossibleK(i, 'B', posBx, sizeBx)
+		return getArgPossibleK(i, posBx, sizeBx)
 	}
 	return getArg(i, posBx, sizeBx), false
 }
@@ -105,61 +90,13 @@ func indexK(v int) int {
 	return (v & (^BITRK))
 }
 
-func (i Instruction) GetArgs(s *State) (a, b, c *Value) {
-	var ax, bx, cx int
-	var bk, ck bool
-
-	//fmt.Printf("FRAME: %#v\n", s.CI.Frame)
+func (i Instruction) GetArgs(s *State) args {
 	op := i.GetOpCode()
-	om := op.GetOpMode()
-
-	if om == MODE_iAx {
-		ax = i.GetArgAx()
-	} else {
-		ax = i.GetArgA()
-		bm := op.GetBMode()
-		if bm != OpArgN {
-			switch om {
-			case MODE_iABC:
-				bx, bk = i.GetArgB(true)
-			case MODE_iABx:
-				bx, bk = i.GetArgBx(true)
-			case MODE_iAsBx:
-				bx = i.GetArgsBx()
-			}
-
-			if op == OP_GETTABUP || op == OP_GETUPVAL || op == OP_SETUPVAL {
-				b = &s.CI.Cl.UpVals[bx]
-			} else if bk || op == OP_LOADK {
-				b = &s.CI.Cl.P.Ks[bx]
-			} else {
-				b = &s.CI.Frame[bx]
-			}
-		}
-		if om == MODE_iABC {
-			cm := op.GetCMode()
-			if cm != OpArgN {
-				cx, ck = i.GetArgC(true)
-				if ck {
-					c = &s.CI.Cl.P.Ks[cx]
-				} else {
-					c = &s.CI.Frame[cx]
-				}
-			}
-		}
-	}
-
-	// TODO : Doesn't seem like what AMode means...
-	if op.GetAMode() {
-		// Register
-		a = &s.CI.Frame[ax]
-	} else {
-		// Upvalue
-		a = &s.CI.Cl.UpVals[ax]
-	}
-	return
+	return opArgsFunc[op](s, i)
 }
 
+// TODO : Broken...
+/*
 func (i Instruction) String() string {
 	var buf bytes.Buffer
 	var a, b, c int
@@ -207,3 +144,4 @@ func (i Instruction) String() string {
 	}
 	return buf.String()
 }
+*/
