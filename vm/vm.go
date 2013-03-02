@@ -43,6 +43,30 @@ func preCall(s *types.State, args types.Args, nRets int) bool {
 	return false
 }
 
+func posCall(s *types.State, firstResult int) int {
+	// TODO : See luaD_poscall in ldo.c, the hook debugging is not implemented for now
+	res := s.CI.FuncIndex
+	wanted := s.CI.NumResults
+	s.CI = s.CI.Prev
+	// Set results in the right slots on the stack
+	var i int
+	for i = wanted; i != 0 && firstResult < s.Top; i-- {
+		s.Stack[res] = s.Stack[firstResult]
+		res, firstResult = res+1, firstResult+1
+	}
+	// Complete missing results with nils
+	for ; i > 0; i-- {
+		s.Stack[res] = nil
+		res++
+	}
+	s.Top = res
+	return wanted - types.LUNE_MULTRET
+}
+
+func closeUpvalues() {
+
+}
+
 func callGoFunc(s *types.State, f types.GoFunc, base, nRets int) {
 	var in []types.Value
 	for i := base; i < s.Top; i++ {
@@ -256,57 +280,42 @@ newFrame:
 			}
 			// Else, it is because last param to this call was a func call with unknown 
 			// number of results, so this call actually set the Top to whatever it had to be.
-			if !preCall(s, args, nRets) {
+			if preCall(s, args, nRets) {
+				// TODO : What to do if Go Func call?
+			} else {
 				goto newFrame
 			}
-			// TODO : What to do if Go Func call?
 			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
+		case types.OP_TAILCALL:
+			panic("TAILCALL: not implemented")
+
+		case types.OP_RETURN:
+			// A B | return R(A), ... ,R(A+B-2)
+			if asBool(args.Bx) {
+				s.Top = s.CI.Base + args.Ax + args.Bx - 1
+			}
+			if len(s.CI.Cl.P.Protos) > 0 {
+				// TODO : Close upvalues
+				closeUpvalues()
+			}
+			args.Bx = posCall(s, s.CI.Base+args.Ax)
+
+			if s.CI == nil {
+				// TODO : Is this equivalent to Lua's check of CIST_REENTRY?
+				fmt.Printf("%s\n", op)
+				return
+			} else {
+				if asBool(args.Bx) {
+					// TODO : Set Top back to CI.Top? I don't have a CI.Top! Do I need a CI.Top? Probably!
+				}
+				if prevOp := s.CI.Cl.P.Code[s.CI.PC-1].GetOpCode(); prevOp != types.OP_CALL {
+					panic(fmt.Sprintf("expected CALL to be previous instruction in RETURNed frame, got %s", prevOp))
+				}
+				fmt.Printf("%s\tR(A)=%v B=%v\n", op, *args.A, args.Bx)
+				goto newFrame
+			}
 			/*
-				case types.OP_TAILCALL:
-					panic("TAILCALL: not implemented")
-
-				case types.OP_RETURN:
-					ax := s.CI.Base + i.GetArgA()
-					bx, _ := i.GetArgB(false)
-					if bx != 0 {
-						s.Stack.Top = ax + bx - 1
-					}
-					if len(s.CI.Cl.P.Protos) > 0 {
-						// TODO : Close upvalues
-					}
-					// TODO : See luaD_poscall in ldo.c, the hook magic is not implemented for now
-					res := s.CI.FuncIndex
-					wanted := s.CI.NumResults
-					s.CI = s.CI.Prev
-					// Set results in the right slots on the stack
-					var j int
-					for j = wanted; j != 0 && ax < s.Stack.Top; j-- {
-						s.Stack.Stk[res] = s.Stack.Stk[ax]
-						res, ax = res+1, ax+1
-					}
-					// Complete missing results with nils
-					for ; j > 0; j-- {
-						s.Stack.Stk[res] = nil
-						res++
-					}
-					s.Stack.Top = res
-					bx = wanted - types.LUNE_MULTRET
-					if s.CI == nil {
-						// TODO : Is this equivalent to Lua's check of CIST_REENTRY?
-						fmt.Printf("%s\n", op)
-						return
-					} else {
-						if bx != 0 {
-							// TODO : Set Top back to CI.Top? I don't have a CI.Top!
-						}
-						if prevOp := s.CI.Cl.P.Code[s.CI.PC-1].GetOpCode(); prevOp != types.OP_CALL {
-							panic(fmt.Sprintf("expected CALL to be previous instruction in RETURNed frame, got %s", prevOp))
-						}
-						fmt.Printf("%s : back to caller frame\n", op)
-						goto newFrame
-					}
-
 				case types.OP_FORLOOP:
 					ax := i.GetArgA()
 					step := s.CI.Frame[ax+2].(float64)
