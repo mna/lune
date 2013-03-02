@@ -90,7 +90,7 @@ func indexK(v int) int {
 	return (v & (^BITRK))
 }
 
-func (i Instruction) GetArgs(s *State) args {
+func (i Instruction) GetArgs(s *State) Args {
 	op := i.GetOpCode()
 	return opArgsFunc[op](s, i)
 }

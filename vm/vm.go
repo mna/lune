@@ -22,14 +22,11 @@ var (
 	}
 )
 
-func doJump(s *types.State, i types.Instruction, e int) (ax, bx int) {
-	ax = i.GetArgA()
-	if asBool(ax) {
+func doJump(s *types.State, args types.Args, e int) {
+	if asBool(args.Ax) {
 		// TODO : Close upvalues - See dojump in lvm.c.
 	}
-	bx = i.GetArgsBx()
-	s.CI.PC += bx + e
-	return
+	s.CI.PC += args.Bx + e
 }
 
 func callGoFunc(s *types.State, f types.GoFunc, base, nRets int) {
@@ -53,8 +50,6 @@ func callGoFunc(s *types.State, f types.GoFunc, base, nRets int) {
 }
 
 func Execute(s *types.State) {
-	//var a, b, c *types.Value
-
 	// Start with entry point (position 0)
 	s.NewCallInfo(s.Stack[0].(*types.Closure), 0, 0)
 
@@ -64,21 +59,18 @@ newFrame:
 		op := i.GetOpCode()
 		s.CI.PC++
 		s.DumpStack()
-		// TODO : Will fail big time here, when some opcodes are executed. OpMasks
-		// just doesn't do what I think it does.
-		// TODO : Make OpMasks smarter for my needs, and return ax, bx, cx too?
 		args := i.GetArgs(s)
 
 		switch op {
 		case types.OP_MOVE:
 			// A B | R(A) := R(B)
-			*a = *b
-			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *a, *b)
+			*args.A = *args.B
+			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_LOADK:
 			// A Bx | R(A) := Kst(Bx)
-			*a = *b
-			fmt.Printf("%s\tR(A)=%v Kst(Bx)=%v\n", op, *a, *b)
+			*args.A = *args.B
+			fmt.Printf("%s\tR(A)=%v Kst(Bx)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_LOADKx:
 			// A | R(A) := Kst(extra arg)
@@ -88,81 +80,74 @@ newFrame:
 			} else {
 				s.CI.PC++
 				ax := i2.GetArgAx()
-				*a = s.CI.Cl.P.Ks[ax]
-				fmt.Printf("%s\tR(A)=%v EXTRAARG=%v\n", op, *a, ax)
+				*args.A = s.CI.Cl.P.Ks[ax]
+				fmt.Printf("%s\tR(A)=%v EXTRAARG=%v\n", op, *args.A, ax)
 			}
 
 		case types.OP_LOADBOOL:
 			// A B C | R(A) := (Bool)B; if (C) PC++
-			bx, _ := i.GetArgB(false)
-			*a = asBool(bx)
+			*args.A = asBool(args.Bx)
 
 			// Skip next instruction if C is true
-			cx, _ := i.GetArgC(false)
-			if asBool(cx) {
+			if asBool(args.Cx) {
 				s.CI.PC++
 			}
-			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *a, bx, cx)
+			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
 		case types.OP_LOADNIL:
 			// A B | R(A) := ... := R(B) := nil
-			ax := i.GetArgA()
-			bx, _ := i.GetArgB(false)
-			for j := 0; j <= bx; j++ {
-				s.CI.Frame[ax+j] = nil
+			for j := 0; j <= args.Bx; j++ {
+				s.CI.Frame[args.Ax+j] = nil
 			}
-			fmt.Printf("%s\tA=%v B=%v\n", op, ax, bx)
+			fmt.Printf("%s\tA=%v B=%v\n", op, args.Ax, args.Bx)
 
 		case types.OP_GETUPVAL:
 			// A B | R(A) := UpValue[B]
-			*a = *b
-			fmt.Printf("%s\tR(A)=%v U(B)=%v\n", op, *a, *b)
+			*args.A = *args.B
+			fmt.Printf("%s\tR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_GETTABUP:
 			// A B C | R(A) := UpValue[B][RK(C)]
-			t := (*b).(types.Table)
-			*a = t.Get(*c)
-			fmt.Printf("%s\tR(A)=%v U(B)=%v RK(C)=%v\n", op, *a, t, *c)
+			t := (*args.B).(types.Table)
+			*args.A = t.Get(*args.C)
+			fmt.Printf("%s\tR(A)=%v U(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
 
 		case types.OP_GETTABLE:
 			// A B C | R(A) := R(B)[RK(C)]
-			t := (*b).(types.Table)
-			*a = t.Get(*c)
-			fmt.Printf("%s\tR(A)=%v R(B)=%v RK(C)=%v\n", op, *a, t, *c)
+			t := (*args.B).(types.Table)
+			*args.A = t.Get(*args.C)
+			fmt.Printf("%s\tR(A)=%v R(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
 
 		case types.OP_SETTABUP:
 			// A B C | UpValue[A][RK(B)] := RK(C) 
-			t := (*a).(types.Table)
-			t.Set(*b, *c)
-			fmt.Printf("%s\tU(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *b, *c)
+			t := (*args.A).(types.Table)
+			t.Set(*args.B, *args.C)
+			fmt.Printf("%s\tU(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
 
 		case types.OP_SETUPVAL:
 			// A B | UpValue[B] := R(A)
-			*b = *a
-			fmt.Printf("%s\tR(A)=%v U(B)=%v\n", op, *a, *b)
+			*args.B = *args.A
+			fmt.Printf("%s\tR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_SETTABLE:
 			// A B C | R(A)[RK(B)] := RK(C)
-			t := (*a).(types.Table)
-			t.Set(*b, *c)
-			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *b, *c)
+			t := (*args.A).(types.Table)
+			t.Set(*args.B, *args.C)
+			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
 
 		case types.OP_NEWTABLE:
 			// A B C | R(A) := {} (size = B,C)
 			t := types.NewTable()
-			bx, _ := i.GetArgB(false)
-			cx, _ := i.GetArgC(false)
 			// TODO : Encoded array and hash sizes (B and C) are ignored at the moment
-			*a = t
-			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, t, bx, cx)
+			*args.A = t
+			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, t, args.Bx, args.Cx)
 
 		case types.OP_SELF:
 			// A B C | R(A+1) := R(B); R(A) := R(B)[RK(C)]
-			ax := i.GetArgA()
-			s.CI.Frame[ax+1] = *b
-			t := (*b).(types.Table)
-			s.CI.Frame[ax] = t.Get(*c)
-			fmt.Printf("%s\tA=%v R(B)=%v RK(C)=%v\n", op, ax, t, *c)
+			s.CI.Frame[args.Ax+1] = *args.B
+			t := (*args.B).(types.Table)
+			s.CI.Frame[args.Ax] = t.Get(*args.C)
+			fmt.Printf("%s\tA=%v R(B)=%v RK(C)=%v\n", op, args.Ax, t, *args.C)
 
 		case types.OP_ADD, types.OP_SUB, types.OP_MUL, types.OP_DIV,
 			types.OP_MOD, types.OP_POW:
@@ -172,43 +157,40 @@ newFrame:
 			// A B C | R(A) := RK(B) ÷ RK(C)
 			// A B C | R(A) := RK(B) % RK(C)
 			// A B C | R(A) := RK(B) ^ RK(C)
-			*a = coerceAndComputeBinaryOp(_BINOPS[op], *b, *c)
-			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, *a, *b, *c)
+			*args.A = coerceAndComputeBinaryOp(_BINOPS[op], *args.B, *args.C)
+			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, *args.A, *args.B, *args.C)
 
 		case types.OP_UNM:
 			// A B | R(A) := -R(B)
-			*a = coerceAndComputeUnaryOp('-', *b)
-			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *a, *b)
+			*args.A = coerceAndComputeUnaryOp('-', *args.B)
+			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_NOT:
 			// A B | R(A) := not R(B)
-			*a = isFalse(*b)
-			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *a, *b)
+			*args.A = isFalse(*args.B)
+			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_LEN:
 			// A B | R(A) := length of R(B)
-			*a = computeLength(*b)
-			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *a, *b)
+			*args.A = computeLength(*args.B)
+			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_CONCAT:
 			// A B C | R(A) := R(B).. ... ..R(C)
-			bx, _ := i.GetArgB(false)
-			cx, _ := i.GetArgC(false)
-			src := s.CI.Frame[bx : cx+1]
-			*a = coerceAndConcatenate(src)
-			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *a, bx, cx)
+			src := s.CI.Frame[args.Bx : args.Cx+1]
+			*args.A = coerceAndConcatenate(src)
+			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
 		case types.OP_JMP:
 			// A sBx | pc+=sBx; if (A) close all upvalues >= R(A) + 1
-			ax, bx := doJump(s, i, 0)
-			fmt.Printf("%s\tA=%v sBx=%v\n", op, ax, bx)
+			doJump(s, args, 0)
+			fmt.Printf("%s\tA=%v sBx=%v\n", op, args.Ax, args.Bx)
 
 		case types.OP_EQ, types.OP_LT, types.OP_LE:
 			// A B C | if ((RK(B) == RK(C)) ~= A) then pc++
 			// A B C | if ((RK(B) <  RK(C)) ~= A) then pc++
 			// A B C | if ((RK(B) <= RK(C)) ~= A) then pc++
-			ax := i.GetArgA()
-			if _CMPOPS[op](*b, *c) != asBool(ax) {
+			if _CMPOPS[op](*args.B, *args.C) != asBool(args.Ax) {
 				s.CI.PC++
 			} else {
 				// For the fall-through case, a JMP is always expected, in order to optimize
@@ -216,67 +198,62 @@ newFrame:
 				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
 					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
-					doJump(s, i2, 1)
+					doJump(s, i2.GetArgs(s), 1)
 				}
 			}
-			fmt.Printf("%s\tA=%v RK(B)=%v RK(C)=%v\n", op, ax, *b, *c)
+			fmt.Printf("%s\tA=%v RK(B)=%v RK(C)=%v\n", op, args.Ax, *args.B, *args.C)
 
 		case types.OP_TEST:
 			// A C | if not (R(A) <=> C) then pc++
-			cx, _ := i.GetArgC(false)
-			if asBool(cx) == isFalse(*a) {
+			if asBool(args.Cx) == isFalse(*args.A) {
 				s.CI.PC++
 			} else {
 				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
 					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
-					doJump(s, i2, 1)
+					doJump(s, i2.GetArgs(s), 1)
 				}
 			}
-			fmt.Printf("%s\tR(A)=%v C=%v\n", op, *a, cx)
+			fmt.Printf("%s\tR(A)=%v C=%v\n", op, *args.A, args.Cx)
 
 		case types.OP_TESTSET:
 			// A B C | if (R(B) <=> C) then R(A) := R(B) else pc++
-			cx, _ := i.GetArgC(false)
-			if asBool(cx) == isFalse(*b) {
+			if asBool(args.Cx) == isFalse(*args.B) {
 				s.CI.PC++
 			} else {
-				*a = *b
+				*args.A = *args.B
 				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
 					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
-					doJump(s, i2, 1)
+					doJump(s, i2.GetArgs(s), 1)
 				}
 			}
-			fmt.Printf("%s\tR(A)=%v R(B)=%v C=%v\n", op, *a, *b, cx)
+			fmt.Printf("%s\tR(A)=%v R(B)=%v C=%v\n", op, *args.A, *args.B, args.Cx)
 
 		case types.OP_CALL:
 			// A B C | R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
 			// CALL always updates the top of stack value.
 			// B=1 means no parameter. B=0 means up-to-top-of-stack parameters. B=2 means 1 parameter, and so on.
 			// C=1 means 1 return value. C=0 means multiple return values. C=2 means 1 return value, and so on.
-			ax := i.GetArgA()
-			bx, _ := i.GetArgB(false)
-			cx, _ := i.GetArgC(false)
-			nRets := cx - 1
-			if bx != 0 {
+			nRets := args.Cx - 1
+			if asBool(args.Bx) {
 				// Adjust top of stack, since we know exactly the number of arguments.
-				s.Top = s.CI.Base + ax + bx
+				s.Top = s.CI.Base + args.Ax + args.Bx
 			}
 			// Else, it is because last param to this call was a func call with unknown 
 			// number of results, so this call actually set the Top to whatever it had to be.
 
 			// TODO : See luaD_precall in ldo.c, manage varargs (see adjust_varargs in ldo.c)
-			switch f := (*a).(type) {
+			switch f := (*args.A).(type) {
 			case types.GoFunc:
 				// Go function call
-				callGoFunc(s, f, s.CI.Base+ax+1, nRets)
+				callGoFunc(s, f, s.CI.Base+args.Ax+1, nRets)
 			case *types.Closure:
 				// Lune function call
-				s.NewCallInfo(f, s.CI.Base+ax, nRets)
+				s.NewCallInfo(f, s.CI.Base+args.Ax, nRets)
 				goto newFrame
 			}
-			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *a, bx, cx)
+			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
 			/*
 				case types.OP_TAILCALL:

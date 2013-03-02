@@ -101,13 +101,13 @@ func (o OpCode) String() string {
 	return opNames[o]
 }
 
-type args struct {
-	ax, bx, cx int
-	a, b, c    *Value
-	bk, ck     bool
+type Args struct {
+	Ax, Bx, Cx int
+	A, B, C    *Value
+	Bk, Ck     bool
 }
 
-type getArgsFunc func(*State, Instruction) args
+type getArgsFunc func(*State, Instruction) Args
 
 var opArgsFunc = [...]getArgsFunc{
 	OP_MOVE:     getRARB,
@@ -152,236 +152,236 @@ var opArgsFunc = [...]getArgsFunc{
 	OP_EXTRAARG: getAx,
 }
 
-func getAx(s *State, i Instruction) args {
-	var ag args
+func getAx(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgAx()
-
-	return ag
-}
-
-func getRA(s *State, i Instruction) args {
-	var ag args
-
-	ag.ax = i.GetArgA()
-	ag.a = &s.CI.Frame[ag.ax]
+	ag.Ax = i.GetArgAx()
 
 	return ag
 }
 
-func getRAB(s *State, i Instruction) args {
-	var ag args
+func getRA(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.bx, _ = i.GetArgB(false)
-
-	return ag
-}
-
-func getRAC(s *State, i Instruction) args {
-	var ag args
-
-	ag.ax = i.GetArgA()
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.cx, _ = i.GetArgC(false)
+	ag.Ax = i.GetArgA()
+	ag.A = &s.CI.Frame[ag.Ax]
 
 	return ag
 }
 
-func getRARB(s *State, i Instruction) args {
-	var ag args
+func getRAB(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.bx, _ = i.GetArgB(false)
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.b = &s.CI.Frame[ag.bx]
-
-	return ag
-}
-
-func getRARBC(s *State, i Instruction) args {
-	var ag args
-
-	ag.ax = i.GetArgA()
-	ag.bx, _ = i.GetArgB(false)
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.b = &s.CI.Frame[ag.bx]
-	ag.cx, _ = i.GetArgC(false)
+	ag.Ax = i.GetArgA()
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.Bx, _ = i.GetArgB(false)
 
 	return ag
 }
 
-func getRARBRC(s *State, i Instruction) args {
-	var ag args
+func getRAC(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.bx, _ = i.GetArgB(false)
-	ag.cx, _ = i.GetArgC(false)
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.b = &s.CI.Frame[ag.bx]
-	ag.c = &s.CI.Frame[ag.cx]
+	ag.Ax = i.GetArgA()
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.Cx, _ = i.GetArgC(false)
 
 	return ag
 }
 
-func getRARBRKC(s *State, i Instruction) args {
-	var ag args
+func getRARB(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.bx, _ = i.GetArgB(false)
-	ag.cx, ag.ck = i.GetArgC(true)
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.b = &s.CI.Frame[ag.bx]
-	if ag.ck {
-		ag.c = &s.CI.Cl.P.Ks[ag.cx]
+	ag.Ax = i.GetArgA()
+	ag.Bx, _ = i.GetArgB(false)
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.B = &s.CI.Frame[ag.Bx]
+
+	return ag
+}
+
+func getRARBC(s *State, i Instruction) Args {
+	var ag Args
+
+	ag.Ax = i.GetArgA()
+	ag.Bx, _ = i.GetArgB(false)
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.B = &s.CI.Frame[ag.Bx]
+	ag.Cx, _ = i.GetArgC(false)
+
+	return ag
+}
+
+func getRARBRC(s *State, i Instruction) Args {
+	var ag Args
+
+	ag.Ax = i.GetArgA()
+	ag.Bx, _ = i.GetArgB(false)
+	ag.Cx, _ = i.GetArgC(false)
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.B = &s.CI.Frame[ag.Bx]
+	ag.C = &s.CI.Frame[ag.Cx]
+
+	return ag
+}
+
+func getRARBRKC(s *State, i Instruction) Args {
+	var ag Args
+
+	ag.Ax = i.GetArgA()
+	ag.Bx, _ = i.GetArgB(false)
+	ag.Cx, ag.Ck = i.GetArgC(true)
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.B = &s.CI.Frame[ag.Bx]
+	if ag.Ck {
+		ag.C = &s.CI.Cl.P.Ks[ag.Cx]
 	} else {
-		ag.c = &s.CI.Frame[ag.cx]
+		ag.C = &s.CI.Frame[ag.Cx]
 	}
 
 	return ag
 }
 
-func getRABC(s *State, i Instruction) args {
-	var ag args
+func getRABC(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.bx, _ = i.GetArgB(false)
-	ag.cx, _ = i.GetArgC(false)
-	ag.a = &s.CI.Frame[ag.ax]
-
-	return ag
-}
-
-func getRAUB(s *State, i Instruction) args {
-	var ag args
-
-	ag.ax = i.GetArgA()
-	ag.bx, _ = i.GetArgB(false)
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.b = &s.CI.Cl.UpVals[ag.bx]
+	ag.Ax = i.GetArgA()
+	ag.Bx, _ = i.GetArgB(false)
+	ag.Cx, _ = i.GetArgC(false)
+	ag.A = &s.CI.Frame[ag.Ax]
 
 	return ag
 }
 
-func getRARKBRKC(s *State, i Instruction) args {
-	var ag args
+func getRAUB(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.bx, ag.bk = i.GetArgB(true)
-	ag.cx, ag.ck = i.GetArgC(true)
-	ag.a = &s.CI.Frame[ag.ax]
-	if ag.bk {
-		ag.b = &s.CI.Cl.P.Ks[ag.bx]
-	} else {
-		ag.b = &s.CI.Frame[ag.bx]
-	}
-	if ag.ck {
-		ag.c = &s.CI.Cl.P.Ks[ag.cx]
-	} else {
-		ag.c = &s.CI.Frame[ag.cx]
-	}
+	ag.Ax = i.GetArgA()
+	ag.Bx, _ = i.GetArgB(false)
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.B = &s.CI.Cl.UpVals[ag.Bx]
 
 	return ag
 }
 
-func getARKBRKC(s *State, i Instruction) args {
-	var ag args
+func getRARKBRKC(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.bx, ag.bk = i.GetArgB(true)
-	ag.cx, ag.ck = i.GetArgC(true)
-	if ag.bk {
-		ag.b = &s.CI.Cl.P.Ks[ag.bx]
+	ag.Ax = i.GetArgA()
+	ag.Bx, ag.Bk = i.GetArgB(true)
+	ag.Cx, ag.Ck = i.GetArgC(true)
+	ag.A = &s.CI.Frame[ag.Ax]
+	if ag.Bk {
+		ag.B = &s.CI.Cl.P.Ks[ag.Bx]
 	} else {
-		ag.b = &s.CI.Frame[ag.bx]
+		ag.B = &s.CI.Frame[ag.Bx]
 	}
-	if ag.ck {
-		ag.c = &s.CI.Cl.P.Ks[ag.cx]
+	if ag.Ck {
+		ag.C = &s.CI.Cl.P.Ks[ag.Cx]
 	} else {
-		ag.c = &s.CI.Frame[ag.cx]
+		ag.C = &s.CI.Frame[ag.Cx]
 	}
 
 	return ag
 }
 
-func getRAUBRKC(s *State, i Instruction) args {
-	var ag args
+func getARKBRKC(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.bx, _ = i.GetArgB(false)
-	ag.cx, ag.ck = i.GetArgC(true)
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.b = &s.CI.Cl.UpVals[ag.bx]
-	if ag.ck {
-		ag.c = &s.CI.Cl.P.Ks[ag.cx]
+	ag.Ax = i.GetArgA()
+	ag.Bx, ag.Bk = i.GetArgB(true)
+	ag.Cx, ag.Ck = i.GetArgC(true)
+	if ag.Bk {
+		ag.B = &s.CI.Cl.P.Ks[ag.Bx]
 	} else {
-		ag.c = &s.CI.Frame[ag.cx]
+		ag.B = &s.CI.Frame[ag.Bx]
+	}
+	if ag.Ck {
+		ag.C = &s.CI.Cl.P.Ks[ag.Cx]
+	} else {
+		ag.C = &s.CI.Frame[ag.Cx]
 	}
 
 	return ag
 }
 
-func getUARKBRKC(s *State, i Instruction) args {
-	var ag args
+func getRAUBRKC(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.bx, ag.bk = i.GetArgB(true)
-	ag.cx, ag.ck = i.GetArgC(true)
-	ag.a = &s.CI.Cl.UpVals[ag.ax]
-	if ag.bk {
-		ag.b = &s.CI.Cl.P.Ks[ag.bx]
+	ag.Ax = i.GetArgA()
+	ag.Bx, _ = i.GetArgB(false)
+	ag.Cx, ag.Ck = i.GetArgC(true)
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.B = &s.CI.Cl.UpVals[ag.Bx]
+	if ag.Ck {
+		ag.C = &s.CI.Cl.P.Ks[ag.Cx]
 	} else {
-		ag.b = &s.CI.Frame[ag.bx]
-	}
-	if ag.ck {
-		ag.c = &s.CI.Cl.P.Ks[ag.cx]
-	} else {
-		ag.c = &s.CI.Frame[ag.cx]
+		ag.C = &s.CI.Frame[ag.Cx]
 	}
 
 	return ag
 }
 
-func getRAKBx(s *State, i Instruction) args {
-	var ag args
+func getUARKBRKC(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.a = &s.CI.Frame[ag.ax]
+	ag.Ax = i.GetArgA()
+	ag.Bx, ag.Bk = i.GetArgB(true)
+	ag.Cx, ag.Ck = i.GetArgC(true)
+	ag.A = &s.CI.Cl.UpVals[ag.Ax]
+	if ag.Bk {
+		ag.B = &s.CI.Cl.P.Ks[ag.Bx]
+	} else {
+		ag.B = &s.CI.Frame[ag.Bx]
+	}
+	if ag.Ck {
+		ag.C = &s.CI.Cl.P.Ks[ag.Cx]
+	} else {
+		ag.C = &s.CI.Frame[ag.Cx]
+	}
+
+	return ag
+}
+
+func getRAKBx(s *State, i Instruction) Args {
+	var ag Args
+
+	ag.Ax = i.GetArgA()
+	ag.A = &s.CI.Frame[ag.Ax]
 
 	// KBx implies that we read Bx as an int, and always look it up as a K
-	ag.bx, _ = i.GetArgBx(false)
-	ag.bk = true
-	ag.b = &s.CI.Cl.P.Ks[ag.bx]
+	ag.Bx, _ = i.GetArgBx(false)
+	ag.Bk = true
+	ag.B = &s.CI.Cl.P.Ks[ag.Bx]
 
 	return ag
 }
 
-func getRABx(s *State, i Instruction) args {
-	var ag args
+func getRABx(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.bx, _ = i.GetArgBx(false)
-
-	return ag
-}
-
-func getAsBx(s *State, i Instruction) args {
-	var ag args
-
-	ag.ax = i.GetArgA()
-	ag.bx = i.GetArgsBx()
+	ag.Ax = i.GetArgA()
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.Bx, _ = i.GetArgBx(false)
 
 	return ag
 }
 
-func getRAsBx(s *State, i Instruction) args {
-	var ag args
+func getAsBx(s *State, i Instruction) Args {
+	var ag Args
 
-	ag.ax = i.GetArgA()
-	ag.a = &s.CI.Frame[ag.ax]
-	ag.bx = i.GetArgsBx()
+	ag.Ax = i.GetArgA()
+	ag.Bx = i.GetArgsBx()
+
+	return ag
+}
+
+func getRAsBx(s *State, i Instruction) Args {
+	var ag Args
+
+	ag.Ax = i.GetArgA()
+	ag.A = &s.CI.Frame[ag.Ax]
+	ag.Bx = i.GetArgsBx()
 
 	return ag
 }
