@@ -63,8 +63,13 @@ func posCall(s *types.State, firstResult int) int {
 	return wanted - types.LUNE_MULTRET
 }
 
-func closeUpvalues() {
+func closeUpvalues(s *types.State, funcIdx int) {
+	for _, stkIdx := range s.OpenUpVals {
+		// TODO : Could be optimized if openupvals are in order (greatest first)
+		if stkIdx >= funcIdx {
 
+		}
+	}
 }
 
 func callGoFunc(s *types.State, f types.GoFunc, base, nRets int) {
@@ -297,7 +302,7 @@ newFrame:
 			}
 			if len(s.CI.Cl.P.Protos) > 0 {
 				// TODO : Close upvalues
-				closeUpvalues()
+				closeUpvalues(s, s.CI.Base+args.Ax)
 			}
 			args.Bx = posCall(s, s.CI.Base+args.Ax)
 

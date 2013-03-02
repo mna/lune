@@ -9,14 +9,40 @@ import (
 // http://play.golang.org/p/e2Ptu8puSZ
 
 const (
-	_INITIAL_STACK_CAP = 2
+	_INITIAL_STACK_CAP  = 10
+	_INITIAL_UPVALS_CAP = 5
 )
 
 type State struct {
-	Stack   []Value
-	Top     int
-	Globals Table
-	CI      *CallInfo
+	Stack      []Value
+	Top        int // index of the first free slot in the stack
+	Globals    Table
+	CI         *CallInfo
+	OpenUpVals []int // index into the stack
+}
+
+func NewState(entryPoint *Prototype) *State {
+	s := &State{
+		Stack:      make([]Value, _INITIAL_STACK_CAP),
+		Globals:    NewTable(),
+		OpenUpVals: make([]int, _INITIAL_UPVALS_CAP),
+	}
+
+	cl := NewClosure(entryPoint)
+	if l := len(entryPoint.Upvalues); l == 1 {
+		// 1 upvalue = globals table as upvalue
+		v := Value(s.Globals)
+		cl.UpVals[0] = v
+	} else if l > 1 {
+		// TODO : panic?
+		panic("too many upvalues expected for entry point")
+	}
+
+	// Push the closure on the stack
+	s.checkStack(cl.P.Meta.MaxStackSize + 1) // +1 for the closure itself
+	s.Stack[s.Top] = cl
+	s.Top++
+	return s
 }
 
 func (s *State) checkStack(needed byte) {
@@ -49,27 +75,15 @@ func (s *State) DumpStack() {
 	}
 }
 
-func NewState(entryPoint *Prototype) *State {
-	s := &State{
-		Stack:   make([]Value, _INITIAL_STACK_CAP),
-		Globals: NewTable(),
-	}
-
-	cl := NewClosure(entryPoint)
-	if l := len(entryPoint.Upvalues); l == 1 {
-		// 1 upvalue = globals table as upvalue
-		v := Value(s.Globals)
-		cl.UpVals[0] = v
-	} else if l > 1 {
-		// TODO : panic?
-		panic("too many upvalues expected for entry point")
-	}
-
-	// Push the closure on the stack
-	s.checkStack(cl.P.Meta.MaxStackSize + 1) // +1 for the closure itself
-	s.Stack[s.Top] = cl
-	s.Top++
-	return s
+type CallInfo struct {
+	Frame      []Value
+	Cl         *Closure
+	FuncIndex  int
+	NumResults int
+	CallStatus byte
+	PC         int
+	Base       int
+	Prev       *CallInfo
 }
 
 func (s *State) NewCallInfo(cl *Closure, idx int, nRets int) {
@@ -111,15 +125,4 @@ func (s *State) NewCallInfo(cl *Closure, idx int, nRets int) {
 	s.Top = base + int(cl.P.Meta.MaxStackSize)
 
 	s.CI = ci
-}
-
-type CallInfo struct {
-	Frame      []Value
-	Cl         *Closure
-	FuncIndex  int
-	NumResults int
-	CallStatus byte
-	PC         int
-	Base       int
-	Prev       *CallInfo
 }
