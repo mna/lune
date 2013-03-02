@@ -83,15 +83,32 @@ func (s *State) NewCallInfo(cl *Closure, idx int, nRets int) {
 		s.Top++
 	}
 
+	var base int
+	if cl.P.Meta.IsVarArg == 0 {
+		base = idx + 1
+	} else {
+		if !(n >= int(cl.P.Meta.NumParams)) {
+			panic(fmt.Sprintf("expected actual number of args (%d) to be greater than or equal to the fixed number of args (%d)", n, cl.P.Meta.NumParams))
+		}
+		fixed := s.Top - n
+		base = s.Top
+		for i := 0; i < int(cl.P.Meta.NumParams); i++ {
+			s.Stack[s.Top] = s.Stack[fixed+i]
+			s.Top++
+			s.Stack[fixed+i] = nil
+		}
+	}
+
 	ci := new(CallInfo)
 	ci.Cl = cl
 	ci.FuncIndex = idx
 	ci.NumResults = nRets
 	ci.CallStatus = 0 // TODO : For now, ignore
 	ci.PC = 0
-	ci.Base = idx + 1 // TODO : For now, considre the base to be fIdx + 1, will have to manage varargs someday
+	ci.Base = base
 	ci.Prev = s.CI
 	ci.Frame = s.Stack[ci.Base:]
+	s.Top = base + int(cl.P.Meta.MaxStackSize)
 
 	s.CI = ci
 }

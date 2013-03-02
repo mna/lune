@@ -29,6 +29,20 @@ func doJump(s *types.State, args types.Args, e int) {
 	s.CI.PC += args.Bx + e
 }
 
+func preCall(s *types.State, args types.Args, nRets int) bool {
+	switch f := (*args.A).(type) {
+	case types.GoFunc:
+		// Go function call
+		callGoFunc(s, f, s.CI.Base+args.Ax+1, nRets)
+		return true
+	case *types.Closure:
+		// Lune function call
+		s.NewCallInfo(f, s.CI.Base+args.Ax, nRets)
+		// TODO : Metamethods
+	}
+	return false
+}
+
 func callGoFunc(s *types.State, f types.GoFunc, base, nRets int) {
 	var in []types.Value
 	for i := base; i < s.Top; i++ {
@@ -242,17 +256,10 @@ newFrame:
 			}
 			// Else, it is because last param to this call was a func call with unknown 
 			// number of results, so this call actually set the Top to whatever it had to be.
-
-			// TODO : See luaD_precall in ldo.c, manage varargs (see adjust_varargs in ldo.c)
-			switch f := (*args.A).(type) {
-			case types.GoFunc:
-				// Go function call
-				callGoFunc(s, f, s.CI.Base+args.Ax+1, nRets)
-			case *types.Closure:
-				// Lune function call
-				s.NewCallInfo(f, s.CI.Base+args.Ax, nRets)
+			if !preCall(s, args, nRets) {
 				goto newFrame
 			}
+			// TODO : What to do if Go Func call?
 			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
 			/*
