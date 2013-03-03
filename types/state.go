@@ -38,13 +38,13 @@ func NewState(entryPoint *Prototype) *State {
 	}
 
 	// Push the closure on the stack
-	s.checkStack(cl.P.Meta.MaxStackSize + 1) // +1 for the closure itself
+	s.CheckStack(cl.P.Meta.MaxStackSize + 1) // +1 for the closure itself
 	s.Stack[s.Top] = cl
 	s.Top++
 	return s
 }
 
-func (s *State) checkStack(needed byte) {
+func (s *State) CheckStack(needed byte) {
 	missing := (s.Top + int(needed)) - cap(s.Stack)
 	for i := 0; i < missing; i++ {
 		s.Stack = append(s.Stack, nil)
@@ -87,7 +87,7 @@ type CallInfo struct {
 
 func (s *State) NewCallInfo(cl *Closure, idx int, nRets int) {
 	// Make sure the stack has enough slots
-	s.checkStack(cl.P.Meta.MaxStackSize)
+	s.CheckStack(cl.P.Meta.MaxStackSize)
 
 	// Complete the arguments
 	n := s.Top - idx - 1

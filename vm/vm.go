@@ -461,7 +461,7 @@ newFrame:
 			n := s.CI.Base - s.CI.FuncIndex - int(s.CI.Cl.P.Meta.NumParams) - 1
 			if b < 0 {
 				b = n
-				// TODO : Check stack, and the args.A may be invalidated
+				s.CheckStack(byte(n))
 				s.Top = s.CI.Base + args.Ax + n
 			}
 			for j := 0; j < b; j++ {
