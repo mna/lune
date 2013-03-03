@@ -386,6 +386,46 @@ newFrame:
 				s.CI.PC += args.Bx
 			}
 
+		case types.OP_SETLIST:
+			// A B C | R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
+			// Sets the values for a range of array elements. B is the number of elements.
+			// Field C encodes the block number of the table to be initialized. The block 
+			// size is denoted by FPF. FPF is “fields per flush”, with a value of 50.
+			// For example, for array locations 1 to 20, C will be 1 and B will be 20.
+			var c, n int
+			var t types.Table
+			var ok bool
+
+			if n = args.Bx; n == 0 {
+				// Determine n using top of the stack
+				n = s.Top - (s.CI.Base + args.Ax) - 1
+			}
+			if c = args.Cx; c == 0 {
+				// Use the following EXTRAARG instruction to get the value
+				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_EXTRAARG {
+					panic(fmt.Sprintf("%s: expected OP_EXTRAARG as next instruction, found %s", op, i2.GetOpCode()))
+				} else {
+					s.CI.PC++
+					c = i2.GetArgAx()
+				}
+			}
+			if t, ok = (*args.A).(types.Table); !ok {
+				panic(fmt.Sprintf("%s: expected R(A) to be a Table", op))
+			}
+			last := ((c - 1) * types.LFIELDS_PER_FLUSH) + n
+			// TODO : Can optimize Table's array allocation here
+			/*
+				if last > t.ArraySize() {
+				}
+			*/
+			// Array portion of Lua's tables are 1-indexed, NOT 0!
+			for ; n > 0; n-- {
+				t.Set(last, s.CI.Frame[args.Ax+n])
+				last--
+			}
+			// TODO : Damn CI.Top...
+			//s.Top = s.CI.Top
+
 		default:
 			fmt.Printf("Ignore %s\n", op)
 			goto newFrame

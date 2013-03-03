@@ -40,4 +40,6 @@ const (
 	MAXINDEXRK = (BITRK - 1)
 
 	LUNE_MULTRET = -1
+
+	LFIELDS_PER_FLUSH = 50 // Needs to be the same as Lua
 )
