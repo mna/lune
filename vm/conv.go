@@ -18,7 +18,7 @@ func isNil(v types.Value) bool {
 
 func isFalse(v types.Value) bool {
 	// Two values evaluate to False: nil and boolean false
-	if v == nil {
+	if isNil(v) {
 		return true
 	}
 	if b, ok := v.(bool); ok && !b {

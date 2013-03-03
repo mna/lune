@@ -377,7 +377,7 @@ newFrame:
 			// Consume instruction
 			s.CI.PC++
 			args = i.GetArgs(s)
-			fallthrough
+			fallthrough // *** explicit FALLTHROUGH
 
 		case types.OP_TFORLOOP:
 			// A sBx | if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }
