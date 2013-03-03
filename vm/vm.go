@@ -455,6 +455,23 @@ newFrame:
 			// TODO : Optimize by caching closures, see getcached() in lvm.c
 			pushClosure(s, p, args.A)
 
+		case types.OP_VARARG:
+			// A B | R(A), R(A+1), ..., R(A+B-2) = vararg
+			b := args.Bx - 1
+			n := s.CI.Base - s.CI.FuncIndex - int(s.CI.Cl.P.Meta.NumParams) - 1
+			if b < 0 {
+				b = n
+				// TODO : Check stack, and the args.A may be invalidated
+				s.Top = s.CI.Base + args.Ax + n
+			}
+			for j := 0; j < b; j++ {
+				if j < n {
+					s.CI.Frame[args.Ax+j] = s.CI.Frame[s.CI.Base-n+j]
+				} else {
+					s.CI.Frame[args.Ax+j] = nil
+				}
+			}
+
 		default:
 			panic(fmt.Sprintf("%s: unexpected opcode", op))
 		}
