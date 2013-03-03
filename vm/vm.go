@@ -67,7 +67,10 @@ func closeUpvalues(s *types.State, funcIdx int) {
 	for _, stkIdx := range s.OpenUpVals {
 		// TODO : Could be optimized if openupvals are in order (greatest first)
 		if stkIdx >= funcIdx {
-
+			// Garbage collect stuff omitted...
+			// Should use a linked list instead...
+			// TODO : Still not clear how upvalues work once closed, where do they live?
+			// will wait for better understanding of closure calls and upvalue lookup...
 		}
 	}
 }
@@ -301,7 +304,6 @@ newFrame:
 				s.Top = s.CI.Base + args.Ax + args.Bx - 1
 			}
 			if len(s.CI.Cl.P.Protos) > 0 {
-				// TODO : Close upvalues
 				closeUpvalues(s, s.CI.Base+args.Ax)
 			}
 			args.Bx = posCall(s, s.CI.Base+args.Ax)
@@ -320,37 +322,38 @@ newFrame:
 				fmt.Printf("%s\tR(A)=%v B=%v\n", op, *args.A, args.Bx)
 				goto newFrame
 			}
-			/*
-				case types.OP_FORLOOP:
-					ax := i.GetArgA()
-					step := s.CI.Frame[ax+2].(float64)
-					idx := s.CI.Frame[ax].(float64) + step
-					limit := s.CI.Frame[ax+1].(float64)
-					if 0 < step {
-						if idx <= limit {
-							s.CI.PC += i.GetArgsBx()
-							s.CI.Frame[ax] = idx
-							s.CI.Frame[ax+3] = idx
-						}
-					} else {
-						if limit <= idx {
-							s.CI.PC += i.GetArgsBx()
-							s.CI.Frame[ax] = idx
-							s.CI.Frame[ax+3] = idx
-						}
-					}
-					fmt.Printf("%s : step:%v idx:%v limit:%v\n", op, step, idx, limit)
 
-				case types.OP_FORPREP:
-					ax := i.GetArgA()
-					// TODO : Conversion, validate that it can be converted to a number (for now, assume number)
-					init := (*a).(float64)
-					limit := s.CI.Frame[ax+1].(float64)
-					step := s.CI.Frame[ax+2].(float64)
-					*a = init - step
-					s.CI.PC += i.GetArgsBx()
-					fmt.Printf("%s : init:%v limit:%v step:%v PC+=%v\n", op, init, limit, step, i.GetArgsBx())
-			*/
+		case types.OP_FORLOOP:
+			// A sBx | R(A)+=R(A+2); if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }
+			step := s.CI.Frame[args.Ax+2].(float64)
+			idx := (*args.A).(float64) + step
+			limit := s.CI.Frame[args.Ax+1].(float64)
+
+			if (0 < step && idx <= limit) || (0 >= step && limit <= idx) {
+				s.CI.PC += args.Bx
+				*args.A = idx
+				s.CI.Frame[args.Ax+3] = idx
+			}
+			fmt.Printf("%s\tR(A)=%v sBx=%v\n", op, *args.A, args.Bx)
+
+		case types.OP_FORPREP:
+			// A sBx | R(A)-=R(A+2); pc+=sBx
+			init, ok := coerceToNumber(*args.A)
+			if !ok {
+				panic(fmt.Sprintf("%s: initial value must be a number", op))
+			}
+			_, ok = coerceToNumber(s.CI.Frame[args.Ax+1])
+			if !ok {
+				panic(fmt.Sprintf("%s: limit must be a number", op))
+			}
+			step, ok := coerceToNumber(s.CI.Frame[args.Ax+2])
+			if !ok {
+				panic(fmt.Sprintf("%s: step must be a number", op))
+			}
+			*args.A = init - step
+			s.CI.PC += args.Bx
+			fmt.Printf("%s\tR(A)=%v sBx=%v\n", op, *args.A, args.Bx)
+
 		default:
 			fmt.Printf("Ignore %s\n", op)
 			goto newFrame
