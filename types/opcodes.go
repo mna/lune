@@ -1,5 +1,9 @@
 package types
 
+import (
+	"strconv"
+)
+
 /*
   Mostly a port of lopcodes.{c,h} from Lua
 
@@ -98,6 +102,9 @@ var opNames = [...]string{
 }
 
 func (o OpCode) String() string {
+	if int(o) >= len(opNames) {
+		return strconv.Itoa(int(o))
+	}
 	return opNames[o]
 }
 

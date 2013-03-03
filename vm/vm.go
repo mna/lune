@@ -427,8 +427,7 @@ newFrame:
 			//s.Top = s.CI.Top
 
 		default:
-			fmt.Printf("Ignore %s\n", op)
-			goto newFrame
+			panic(fmt.Sprintf("%s: unexpected opcode", op))
 		}
 	}
 }
