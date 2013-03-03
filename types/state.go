@@ -34,8 +34,7 @@ func NewState(entryPoint *Prototype) *State {
 		v := Value(s.Globals)
 		cl.UpVals[0] = v
 	} else if l > 1 {
-		// TODO : panic?
-		panic("too many upvalues expected for entry point")
+		panic(fmt.Sprintf("too many upvalues expected for entry point: %d", l))
 	}
 
 	// Push the closure on the stack

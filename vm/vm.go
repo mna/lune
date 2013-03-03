@@ -75,6 +75,29 @@ func closeUpvalues(s *types.State, funcIdx int) {
 	}
 }
 
+func findUpval() types.Value {
+	// TODO : Implement...
+	return nil
+}
+
+func pushClosure(s *types.State, p *types.Prototype, ra *types.Value) {
+	parentCl := s.CI.Cl
+	cl := types.NewClosure(p)
+	// Push the new closure onto the stack, in its slot
+	*ra = cl
+
+	// Assign upvalues
+	for i, uv := range p.Upvalues {
+		if asBool(int(uv.Instack)) {
+			// Upval is a local variable
+			cl.UpVals[i] = findUpval()
+		} else {
+			// Get upval from enclosing function's upvalues
+			cl.UpVals[i] = parentCl.UpVals[uv.Idx]
+		}
+	}
+}
+
 func callGoFunc(s *types.State, f types.GoFunc, base, nRets int) {
 	var in []types.Value
 	for i := base; i < s.Top; i++ {
@@ -425,6 +448,12 @@ newFrame:
 			}
 			// TODO : Damn CI.Top...
 			//s.Top = s.CI.Top
+
+		case types.OP_CLOSURE:
+			// A Bx | R(A) := closure(KPROTO[Bx])
+			p := s.CI.Cl.P.Protos[args.Bx]
+			// TODO : Optimize by caching closures, see getcached() in lvm.c
+			pushClosure(s, p, args.A)
 
 		default:
 			panic(fmt.Sprintf("%s: unexpected opcode", op))
