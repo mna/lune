@@ -12,6 +12,10 @@ func asBool(i int) bool {
 	return i != 0
 }
 
+func isNil(v types.Value) bool {
+	return v == nil
+}
+
 func isFalse(v types.Value) bool {
 	// Two values evaluate to False: nil and boolean false
 	if v == nil {

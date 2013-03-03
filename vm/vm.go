@@ -100,12 +100,16 @@ func Execute(s *types.State) {
 	s.NewCallInfo(s.Stack[0].(*types.Closure), 0, 0)
 
 newFrame:
+	var i types.Instruction
+	var op types.OpCode
+	var args types.Args
+
 	for {
-		i := s.CI.Cl.P.Code[s.CI.PC]
-		op := i.GetOpCode()
+		i = s.CI.Cl.P.Code[s.CI.PC]
+		op = i.GetOpCode()
 		s.CI.PC++
 		s.DumpStack()
-		args := i.GetArgs(s)
+		args = i.GetArgs(s)
 
 		switch op {
 		case types.OP_MOVE:
@@ -353,6 +357,34 @@ newFrame:
 			*args.A = init - step
 			s.CI.PC += args.Bx
 			fmt.Printf("%s\tR(A)=%v sBx=%v\n", op, *args.A, args.Bx)
+
+		case types.OP_TFORCALL:
+			// A C | R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));
+			callBase := args.Ax + 3
+			s.CI.Frame[callBase+2] = s.CI.Frame[args.Ax+2]
+			s.CI.Frame[callBase+1] = s.CI.Frame[args.Ax+1]
+			s.CI.Frame[callBase] = s.CI.Frame[args.Ax]
+			s.Top = s.CI.Base + callBase + 3 // Func + 2 args (state and index)
+			// TODO : luaD_call(s, cb, args.Cx, 1)
+			// TODO: s.Top = s.CI.Top
+
+			// Fallthrough to the TFORLOOP, which must always follow a TFORCALL
+			i = s.CI.Cl.P.Code[s.CI.PC]
+			op = i.GetOpCode()
+			if op != types.OP_TFORLOOP {
+				panic(fmt.Sprintf("OP_TFORCALL: expected OP_TFORLOOP as next instruction, found %s", op))
+			}
+			// Consume instruction
+			s.CI.PC++
+			args = i.GetArgs(s)
+			fallthrough
+
+		case types.OP_TFORLOOP:
+			// A sBx | if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }
+			if !isNil(s.CI.Frame[args.Ax+1]) {
+				*args.A = s.CI.Frame[args.Ax+1]
+				s.CI.PC += args.Bx
+			}
 
 		default:
 			fmt.Printf("Ignore %s\n", op)
