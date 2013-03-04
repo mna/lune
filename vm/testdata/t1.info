@@ -1,0 +1,11 @@
+
+main <t1.lua:0,0> (2 instructions at 0x7f86684048b0)
+0+ params, 2 slots, 1 upvalue, 0 locals, 2 constants, 0 functions
+	1	[1]	SETTABUP 	0 -1 -2	; _ENV "a" 6
+	2	[1]	RETURN   	0 1
+constants (2) for 0x7f86684048b0:
+	1	"a"
+	2	6
+locals (0) for 0x7f86684048b0:
+upvalues (1) for 0x7f86684048b0:
+	0	_ENV	1	0

@@ -131,7 +131,8 @@ newFrame:
 		i = s.CI.Cl.P.Code[s.CI.PC]
 		op = i.GetOpCode()
 		s.CI.PC++
-		s.DumpStack()
+		//s.DumpStack()
+		s.OpCodeDebug = append(s.OpCodeDebug, op)
 		args = i.GetArgs(s)
 
 		switch op {
@@ -152,6 +153,7 @@ newFrame:
 				panic(fmt.Sprintf("%s: expected OP_EXTRAARG as next instruction, found %s", op, i2.GetOpCode()))
 			} else {
 				s.CI.PC++
+				s.OpCodeDebug = append(s.OpCodeDebug, i2.GetOpCode())
 				ax := i2.GetArgAx()
 				*args.A = s.CI.Cl.P.Ks[ax]
 				fmt.Printf("%s\tR(A)=%v EXTRAARG=%v\n", op, *args.A, ax)
@@ -271,6 +273,7 @@ newFrame:
 				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
 					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
+					s.OpCodeDebug = append(s.OpCodeDebug, i2.GetOpCode())
 					doJump(s, i2.GetArgs(s), 1)
 				}
 			}
@@ -284,6 +287,7 @@ newFrame:
 				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
 					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
+					s.OpCodeDebug = append(s.OpCodeDebug, i2.GetOpCode())
 					doJump(s, i2.GetArgs(s), 1)
 				}
 			}
@@ -298,6 +302,7 @@ newFrame:
 				if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_JMP {
 					panic(fmt.Sprintf("%s: expected OP_JMP as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
+					s.OpCodeDebug = append(s.OpCodeDebug, i2.GetOpCode())
 					doJump(s, i2.GetArgs(s), 1)
 				}
 			}
@@ -429,6 +434,7 @@ newFrame:
 					panic(fmt.Sprintf("%s: expected OP_EXTRAARG as next instruction, found %s", op, i2.GetOpCode()))
 				} else {
 					s.CI.PC++
+					s.OpCodeDebug = append(s.OpCodeDebug, i2.GetOpCode())
 					c = i2.GetArgAx()
 				}
 			}
