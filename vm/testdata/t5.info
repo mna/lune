@@ -1,0 +1,21 @@
+
+main <t5.lua:0,0> (9 instructions at 0x7fa089c048b0)
+0+ params, 2 slots, 1 upvalue, 0 locals, 5 constants, 0 functions
+	1	[1]	NEWTABLE 	0 0 0
+	2	[1]	SETTABUP 	0 -1 0	; _ENV "a"
+	3	[2]	GETTABUP 	0 0 -1	; _ENV "a"
+	4	[2]	SETTABLE 	0 -2 -3	; "test" 6
+	5	[3]	GETTABUP 	0 0 -1	; _ENV "a"
+	6	[3]	GETTABLE 	0 0 -2	; "test"
+	7	[3]	MUL      	0 0 -5	; - 2
+	8	[3]	SETTABUP 	0 -4 0	; _ENV "b"
+	9	[3]	RETURN   	0 1
+constants (5) for 0x7fa089c048b0:
+	1	"a"
+	2	"test"
+	3	6
+	4	"b"
+	5	2
+locals (0) for 0x7fa089c048b0:
+upvalues (1) for 0x7fa089c048b0:
+	0	_ENV	1	0
