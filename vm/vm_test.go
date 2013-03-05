@@ -39,6 +39,25 @@ var (
 			types.Table{},
 			0,
 		},
+		end2endTest{
+			"t4",
+			[]types.OpCode{
+				types.OP_LOADBOOL,
+				types.OP_LOADNIL,
+				types.OP_SETTABUP,
+				types.OP_SETTABUP,
+				types.OP_GETTABUP,
+				types.OP_NOT,
+				types.OP_SETTABUP,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, false, nil},
+			types.Table{
+				"a": true,
+				"b": false,
+			},
+			0,
+		},
 	}
 )
 

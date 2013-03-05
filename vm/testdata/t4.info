@@ -1,0 +1,17 @@
+
+main <t4.lua:0,0> (8 instructions at 0x7fe1294048b0)
+0+ params, 2 slots, 1 upvalue, 0 locals, 2 constants, 0 functions
+	1	[1]	LOADBOOL 	0 1 0
+	2	[1]	LOADNIL  	1 0
+	3	[1]	SETTABUP 	0 -2 1	; _ENV "b"
+	4	[1]	SETTABUP 	0 -1 0	; _ENV "a"
+	5	[2]	GETTABUP 	0 0 -1	; _ENV "a"
+	6	[2]	NOT      	0 0
+	7	[2]	SETTABUP 	0 -2 0	; _ENV "b"
+	8	[2]	RETURN   	0 1
+constants (2) for 0x7fe1294048b0:
+	1	"a"
+	2	"b"
+locals (0) for 0x7fe1294048b0:
+upvalues (1) for 0x7fe1294048b0:
+	0	_ENV	1	0
