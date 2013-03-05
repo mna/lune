@@ -86,6 +86,18 @@ var (
 			},
 			0,
 		},
+		end2endTest{
+			"t6",
+			"",
+			[]types.OpCode{
+				types.OP_LOADK,
+				types.OP_LEN,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, "I come from down in the valley", 30.0},
+			types.Table{},
+			0,
+		},
 	}
 )
 

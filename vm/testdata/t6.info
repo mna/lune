@@ -1,0 +1,13 @@
+
+main <t6.lua:0,0> (3 instructions at 0x7fb7024048b0)
+0+ params, 2 slots, 1 upvalue, 2 locals, 1 constant, 0 functions
+	1	[1]	LOADK    	0 -1	; "I come from down in the valley"
+	2	[2]	LEN      	1 0
+	3	[2]	RETURN   	0 1
+constants (1) for 0x7fb7024048b0:
+	1	"I come from down in the valley"
+locals (2) for 0x7fb7024048b0:
+	0	a	2	4
+	1	b	3	4
+upvalues (1) for 0x7fb7024048b0:
+	0	_ENV	1	0
