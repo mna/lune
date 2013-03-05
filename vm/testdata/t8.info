@@ -1,0 +1,41 @@
+
+main <t8.lua:0,0> (7 instructions at 0x7f9ca9c048c0)
+0+ params, 2 slots, 1 upvalue, 0 locals, 3 constants, 1 function
+	1	[8]	CLOSURE  	0 0	; 0x7f9ca9c04b00
+	2	[6]	SETTABUP 	0 -1 0	; _ENV "fib"
+	3	[10]	GETTABUP 	0 0 -1	; _ENV "fib"
+	4	[10]	LOADK    	1 -3	; 4
+	5	[10]	CALL     	0 2 2
+	6	[10]	SETTABUP 	0 -2 0	; _ENV "a"
+	7	[10]	RETURN   	0 1
+constants (3) for 0x7f9ca9c048c0:
+	1	"fib"
+	2	"a"
+	3	4
+locals (0) for 0x7f9ca9c048c0:
+upvalues (1) for 0x7f9ca9c048c0:
+	0	_ENV	1	0
+
+function <t8.lua:6,8> (13 instructions at 0x7f9ca9c04b00)
+1 param, 4 slots, 1 upvalue, 1 local, 3 constants, 0 functions
+	1	[7]	LT       	0 0 -1	; - 2
+	2	[7]	JMP      	0 2	; to 5
+	3	[7]	TESTSET  	1 0 1
+	4	[7]	JMP      	0 7	; to 12
+	5	[7]	GETTABUP 	1 0 -2	; _ENV "fib"
+	6	[7]	SUB      	2 0 -3	; - 1
+	7	[7]	CALL     	1 2 2
+	8	[7]	GETTABUP 	2 0 -2	; _ENV "fib"
+	9	[7]	SUB      	3 0 -1	; - 2
+	10	[7]	CALL     	2 2 2
+	11	[7]	ADD      	1 1 2
+	12	[7]	RETURN   	1 2
+	13	[8]	RETURN   	0 1
+constants (3) for 0x7f9ca9c04b00:
+	1	2
+	2	"fib"
+	3	1
+locals (1) for 0x7f9ca9c04b00:
+	0	n	1	14
+upvalues (1) for 0x7f9ca9c04b00:
+	0	_ENV	0	0

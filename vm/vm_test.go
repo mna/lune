@@ -98,7 +98,28 @@ var (
 			types.Table{},
 			0,
 		},
+		end2endTest{
+			"t7",
+			"",
+			[]types.OpCode{
+				types.OP_CLOSURE,
+				types.OP_SETTABUP,
+				types.OP_GETTABUP,
+				types.OP_CALL,
+				types.OP_LOADK,
+				types.OP_UNM,
+				types.OP_MOD,
+				types.OP_RETURN,
+				types.OP_SETTABUP,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, -1.0, 10.0, -1.0},
+			types.Table{"hello": someClosure, "b": -1.0},
+			0,
+		},
 	}
+
+	someClosure = new(types.Closure)
 )
 
 // Run all end to end test cases
@@ -172,6 +193,9 @@ func assertValues(t *testing.T, tc end2endTest, vEx types.Value, vAc types.Value
 		if typeEx != nil && typeEx.Kind() == reflect.Map {
 			// Maps are uncomparable, must use assertTables
 			assertTables(t, tc, vEx.(types.Table), vAc.(types.Table))
+		} else if vEx == someClosure {
+			// Special case for closures, no deep compare, just the fact
+			// that both are closures is ok.
 		} else if vEx != vAc {
 			t.Errorf("%s: expected %s value to be %v, got %v", tc.name, tc.context, vEx, vAc)
 		}
