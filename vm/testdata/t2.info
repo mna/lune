@@ -1,0 +1,15 @@
+
+main <t2.lua:0,0> (4 instructions at 0x7f9fc94048b0)
+0+ params, 2 slots, 1 upvalue, 1 local, 3 constants, 0 functions
+	1	[1]	LOADK    	0 -1	; 10.5
+	2	[2]	MUL      	1 0 -3	; - 2
+	3	[2]	SETTABUP 	0 -2 1	; _ENV "b"
+	4	[2]	RETURN   	0 1
+constants (3) for 0x7f9fc94048b0:
+	1	10.5
+	2	"b"
+	3	2
+locals (1) for 0x7f9fc94048b0:
+	0	a	2	5
+upvalues (1) for 0x7f9fc94048b0:
+	0	_ENV	1	0

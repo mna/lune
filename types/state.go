@@ -14,11 +14,12 @@ const (
 )
 
 type State struct {
-	Stack      []Value
-	Top        int // index of the first free slot in the stack
-	Globals    Table
-	CI         *CallInfo
-	OpenUpVals []int // index into the stack
+	Stack       []Value
+	Top         int // index of the first free slot in the stack
+	Globals     Table
+	CI          *CallInfo
+	OpenUpVals  []int    // TODO : index into the stack or struct?
+	OpCodeDebug []OpCode // TODO : Very temporary, find a better solution for testing... hooks?
 }
 
 func NewState(entryPoint *Prototype) *State {
@@ -51,6 +52,7 @@ func (s *State) CheckStack(needed byte) {
 	}
 }
 
+// TODO : Very very temporary...
 func (s *State) DumpStack() {
 	fmt.Println("*** STACK ***")
 	for i, v := range s.Stack {

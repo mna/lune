@@ -1,0 +1,18 @@
+
+main <t3.lua:0,0> (6 instructions at 0x7ff1294048b0)
+0+ params, 3 slots, 1 upvalue, 3 locals, 2 constants, 0 functions
+	1	[1]	LOADK    	0 -1	; 7
+	2	[2]	DIV      	1 0 -2	; - 2
+	3	[3]	TESTSET  	2 1 0
+	4	[3]	JMP      	0 1	; to 6
+	5	[3]	SUB      	2 0 1
+	6	[3]	RETURN   	0 1
+constants (2) for 0x7ff1294048b0:
+	1	7
+	2	2
+locals (3) for 0x7ff1294048b0:
+	0	a	2	7
+	1	b	3	7
+	2	c	6	7
+upvalues (1) for 0x7ff1294048b0:
+	0	_ENV	1	0

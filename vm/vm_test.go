@@ -21,8 +21,22 @@ var (
 		end2endTest{
 			"t1",
 			[]types.OpCode{types.OP_SETTABUP, types.OP_RETURN},
-			[]types.Value{},
+			[]types.Value{nil},
 			types.Table{"a": 6.0},
+			0,
+		},
+		end2endTest{
+			"t2",
+			[]types.OpCode{types.OP_LOADK, types.OP_MUL, types.OP_SETTABUP, types.OP_RETURN},
+			[]types.Value{nil, 10.5, 21.0},
+			types.Table{"b": 21.0},
+			0,
+		},
+		end2endTest{
+			"t3",
+			[]types.OpCode{types.OP_LOADK, types.OP_DIV, types.OP_TESTSET, types.OP_SUB, types.OP_RETURN},
+			[]types.Value{nil, 7.0, 3.5, 3.5},
+			types.Table{},
 			0,
 		},
 	}
@@ -30,6 +44,7 @@ var (
 
 func TestEnd2End(t *testing.T) {
 	for _, tc := range end2endCases {
+		fmt.Printf("%s: running...\n", tc.name)
 		testEnd2EndCase(t, tc)
 	}
 }
@@ -63,9 +78,13 @@ func assertStack(t *testing.T, tc end2endTest, s *types.State) {
 	} else {*/
 	// Same stack size, check values
 	for i, vEx := range tc.stack {
+		if i == 0 && vEx == nil {
+			// Ignore if expected is nil at position 0 (will be the startup function)
+			continue
+		}
 		vAc := s.Stack[i]
 		if vEx != vAc {
-			t.Errorf("%s: expected stack value %s at position %d, got %s", tc.name, vEx, i, vAc)
+			t.Errorf("%s: expected stack value %v at position %d, got %v", tc.name, vEx, i, vAc)
 		}
 	}
 	//}

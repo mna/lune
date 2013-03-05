@@ -139,12 +139,12 @@ newFrame:
 		case types.OP_MOVE:
 			// A B | R(A) := R(B)
 			*args.A = *args.B
-			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
+			fmt.Printf("%-10sR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_LOADK:
 			// A Bx | R(A) := Kst(Bx)
 			*args.A = *args.B
-			fmt.Printf("%s\tR(A)=%v Kst(Bx)=%v\n", op, *args.A, *args.B)
+			fmt.Printf("%-10sR(A)=%v Kst(Bx)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_LOADKx:
 			// A | R(A) := Kst(extra arg)
@@ -156,7 +156,7 @@ newFrame:
 				s.OpCodeDebug = append(s.OpCodeDebug, i2.GetOpCode())
 				ax := i2.GetArgAx()
 				*args.A = s.CI.Cl.P.Ks[ax]
-				fmt.Printf("%s\tR(A)=%v EXTRAARG=%v\n", op, *args.A, ax)
+				fmt.Printf("%-10sR(A)=%v EXTRAARG=%v\n", op, *args.A, ax)
 			}
 
 		case types.OP_LOADBOOL:
@@ -167,62 +167,62 @@ newFrame:
 			if asBool(args.Cx) {
 				s.CI.PC++
 			}
-			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
+			fmt.Printf("%-10sR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
 		case types.OP_LOADNIL:
 			// A B | R(A) := ... := R(B) := nil
 			for j := 0; j <= args.Bx; j++ {
 				s.CI.Frame[args.Ax+j] = nil
 			}
-			fmt.Printf("%s\tA=%v B=%v\n", op, args.Ax, args.Bx)
+			fmt.Printf("%-10sA=%v B=%v\n", op, args.Ax, args.Bx)
 
 		case types.OP_GETUPVAL:
 			// A B | R(A) := UpValue[B]
 			*args.A = *args.B
-			fmt.Printf("%s\tR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
+			fmt.Printf("%-10sR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_GETTABUP:
 			// A B C | R(A) := UpValue[B][RK(C)]
 			t := (*args.B).(types.Table)
 			*args.A = t.Get(*args.C)
-			fmt.Printf("%s\tR(A)=%v U(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
+			fmt.Printf("%-10sR(A)=%v U(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
 
 		case types.OP_GETTABLE:
 			// A B C | R(A) := R(B)[RK(C)]
 			t := (*args.B).(types.Table)
 			*args.A = t.Get(*args.C)
-			fmt.Printf("%s\tR(A)=%v R(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
+			fmt.Printf("%-10sR(A)=%v R(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
 
 		case types.OP_SETTABUP:
 			// A B C | UpValue[A][RK(B)] := RK(C) 
 			t := (*args.A).(types.Table)
 			t.Set(*args.B, *args.C)
-			fmt.Printf("%s\tU(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
+			fmt.Printf("%-10sU(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
 
 		case types.OP_SETUPVAL:
 			// A B | UpValue[B] := R(A)
 			*args.B = *args.A
-			fmt.Printf("%s\tR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
+			fmt.Printf("%-10sR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_SETTABLE:
 			// A B C | R(A)[RK(B)] := RK(C)
 			t := (*args.A).(types.Table)
 			t.Set(*args.B, *args.C)
-			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
+			fmt.Printf("%-10sR(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
 
 		case types.OP_NEWTABLE:
 			// A B C | R(A) := {} (size = B,C)
 			t := types.NewTable()
 			// TODO : Encoded array and hash sizes (B and C) are ignored at the moment
 			*args.A = t
-			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, t, args.Bx, args.Cx)
+			fmt.Printf("%-10sR(A)=%v B=%v C=%v\n", op, t, args.Bx, args.Cx)
 
 		case types.OP_SELF:
 			// A B C | R(A+1) := R(B); R(A) := R(B)[RK(C)]
 			s.CI.Frame[args.Ax+1] = *args.B
 			t := (*args.B).(types.Table)
 			s.CI.Frame[args.Ax] = t.Get(*args.C)
-			fmt.Printf("%s\tA=%v R(B)=%v RK(C)=%v\n", op, args.Ax, t, *args.C)
+			fmt.Printf("%-10sA=%v R(B)=%v RK(C)=%v\n", op, args.Ax, t, *args.C)
 
 		case types.OP_ADD, types.OP_SUB, types.OP_MUL, types.OP_DIV,
 			types.OP_MOD, types.OP_POW:
@@ -233,33 +233,33 @@ newFrame:
 			// A B C | R(A) := RK(B) % RK(C)
 			// A B C | R(A) := RK(B) ^ RK(C)
 			*args.A = coerceAndComputeBinaryOp(_BINOPS[op], *args.B, *args.C)
-			fmt.Printf("%s\tR(A)=%v RK(B)=%v RK(C)=%v\n", op, *args.A, *args.B, *args.C)
+			fmt.Printf("%-10sR(A)=%v RK(B)=%v RK(C)=%v\n", op, *args.A, *args.B, *args.C)
 
 		case types.OP_UNM:
 			// A B | R(A) := -R(B)
 			*args.A = coerceAndComputeUnaryOp('-', *args.B)
-			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
+			fmt.Printf("%-10sR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_NOT:
 			// A B | R(A) := not R(B)
 			*args.A = isFalse(*args.B)
-			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
+			fmt.Printf("%-10sR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_LEN:
 			// A B | R(A) := length of R(B)
 			*args.A = computeLength(*args.B)
-			fmt.Printf("%s\tR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
+			fmt.Printf("%-10sR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_CONCAT:
 			// A B C | R(A) := R(B).. ... ..R(C)
 			src := s.CI.Frame[args.Bx : args.Cx+1]
 			*args.A = coerceAndConcatenate(src)
-			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
+			fmt.Printf("%-10sR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
 		case types.OP_JMP:
 			// A sBx | pc+=sBx; if (A) close all upvalues >= R(A) + 1
 			doJump(s, args, 0)
-			fmt.Printf("%s\tA=%v sBx=%v\n", op, args.Ax, args.Bx)
+			fmt.Printf("%-10sA=%v sBx=%v\n", op, args.Ax, args.Bx)
 
 		case types.OP_EQ, types.OP_LT, types.OP_LE:
 			// A B C | if ((RK(B) == RK(C)) ~= A) then pc++
@@ -277,7 +277,7 @@ newFrame:
 					doJump(s, i2.GetArgs(s), 1)
 				}
 			}
-			fmt.Printf("%s\tA=%v RK(B)=%v RK(C)=%v\n", op, args.Ax, *args.B, *args.C)
+			fmt.Printf("%-10sA=%v RK(B)=%v RK(C)=%v\n", op, args.Ax, *args.B, *args.C)
 
 		case types.OP_TEST:
 			// A C | if not (R(A) <=> C) then pc++
@@ -291,7 +291,7 @@ newFrame:
 					doJump(s, i2.GetArgs(s), 1)
 				}
 			}
-			fmt.Printf("%s\tR(A)=%v C=%v\n", op, *args.A, args.Cx)
+			fmt.Printf("%-10sR(A)=%v C=%v\n", op, *args.A, args.Cx)
 
 		case types.OP_TESTSET:
 			// A B C | if (R(B) <=> C) then R(A) := R(B) else pc++
@@ -306,7 +306,7 @@ newFrame:
 					doJump(s, i2.GetArgs(s), 1)
 				}
 			}
-			fmt.Printf("%s\tR(A)=%v R(B)=%v C=%v\n", op, *args.A, *args.B, args.Cx)
+			fmt.Printf("%-10sR(A)=%v R(B)=%v C=%v\n", op, *args.A, *args.B, args.Cx)
 
 		case types.OP_CALL:
 			// A B C | R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
@@ -325,7 +325,7 @@ newFrame:
 			} else {
 				goto newFrame
 			}
-			fmt.Printf("%s\tR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
+			fmt.Printf("%-10sR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
 		case types.OP_TAILCALL:
 			panic("TAILCALL: not implemented")
@@ -351,7 +351,7 @@ newFrame:
 				if prevOp := s.CI.Cl.P.Code[s.CI.PC-1].GetOpCode(); prevOp != types.OP_CALL {
 					panic(fmt.Sprintf("expected CALL to be previous instruction in RETURNed frame, got %s", prevOp))
 				}
-				fmt.Printf("%s\tR(A)=%v B=%v\n", op, *args.A, args.Bx)
+				fmt.Printf("%-10sR(A)=%v B=%v\n", op, *args.A, args.Bx)
 				goto newFrame
 			}
 
@@ -366,7 +366,7 @@ newFrame:
 				*args.A = idx
 				s.CI.Frame[args.Ax+3] = idx
 			}
-			fmt.Printf("%s\tR(A)=%v sBx=%v\n", op, *args.A, args.Bx)
+			fmt.Printf("%-10sR(A)=%v sBx=%v\n", op, *args.A, args.Bx)
 
 		case types.OP_FORPREP:
 			// A sBx | R(A)-=R(A+2); pc+=sBx
@@ -384,7 +384,7 @@ newFrame:
 			}
 			*args.A = init - step
 			s.CI.PC += args.Bx
-			fmt.Printf("%s\tR(A)=%v sBx=%v\n", op, *args.A, args.Bx)
+			fmt.Printf("%-10sR(A)=%v sBx=%v\n", op, *args.A, args.Bx)
 
 		case types.OP_TFORCALL:
 			// A C | R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));
@@ -399,12 +399,14 @@ newFrame:
 			// Fallthrough to the TFORLOOP, which must always follow a TFORCALL
 			i = s.CI.Cl.P.Code[s.CI.PC]
 			op = i.GetOpCode()
+			s.OpCodeDebug = append(s.OpCodeDebug, op)
 			if op != types.OP_TFORLOOP {
 				panic(fmt.Sprintf("OP_TFORCALL: expected OP_TFORLOOP as next instruction, found %s", op))
 			}
 			// Consume instruction
 			s.CI.PC++
 			args = i.GetArgs(s)
+			fmt.Printf("%-10sA=%v C=%v\n", op, args.Ax, args.Cx)
 			fallthrough // *** explicit FALLTHROUGH
 
 		case types.OP_TFORLOOP:
@@ -413,6 +415,7 @@ newFrame:
 				*args.A = s.CI.Frame[args.Ax+1]
 				s.CI.PC += args.Bx
 			}
+			fmt.Printf("%-10sR(A)=%v sBx=%v\n", op, *args.A, args.Bx)
 
 		case types.OP_SETLIST:
 			// A B C | R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
@@ -454,12 +457,14 @@ newFrame:
 			}
 			// TODO : Damn CI.Top...
 			//s.Top = s.CI.Top
+			fmt.Printf("%-10sR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
 		case types.OP_CLOSURE:
 			// A Bx | R(A) := closure(KPROTO[Bx])
 			p := s.CI.Cl.P.Protos[args.Bx]
 			// TODO : Optimize by caching closures, see getcached() in lvm.c
 			pushClosure(s, p, args.A)
+			fmt.Printf("%-10sR(A)=%v Bx=%v\n", op, *args.A, args.Bx)
 
 		case types.OP_VARARG:
 			// A B | R(A), R(A+1), ..., R(A+B-2) = vararg
@@ -477,6 +482,7 @@ newFrame:
 					s.CI.Frame[args.Ax+j] = nil
 				}
 			}
+			fmt.Printf("%-10sA=%v B=%v\n", op, args.Ax, args.Bx)
 
 		default:
 			panic(fmt.Sprintf("%s: unexpected opcode", op))
