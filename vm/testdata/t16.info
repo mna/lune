@@ -1,0 +1,22 @@
+
+main <t16.lua:0,0> (10 instructions at 0x7ff8fac048e0)
+0+ params, 3 slots, 1 upvalue, 3 locals, 2 constants, 0 functions
+	1	[1]	LOADK    	0 -1	; 12
+	2	[2]	LT       	1 -2 0	; 20 -
+	3	[2]	JMP      	0 1	; to 5
+	4	[2]	LOADBOOL 	1 0 1
+	5	[2]	LOADBOOL 	1 1 0
+	6	[3]	LT       	1 0 -2	; - 20
+	7	[3]	JMP      	0 1	; to 9
+	8	[3]	LOADBOOL 	2 0 1
+	9	[3]	LOADBOOL 	2 1 0
+	10	[3]	RETURN   	0 1
+constants (2) for 0x7ff8fac048e0:
+	1	12
+	2	20
+locals (3) for 0x7ff8fac048e0:
+	0	a	2	11
+	1	b	6	11
+	2	c	10	11
+upvalues (1) for 0x7ff8fac048e0:
+	0	_ENV	1	0

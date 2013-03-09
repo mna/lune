@@ -1,0 +1,34 @@
+
+main <t18.lua:0,0> (11 instructions at 0x7fdea0c048e0)
+0+ params, 3 slots, 1 upvalue, 0 locals, 4 constants, 1 function
+	1	[2]	NEWTABLE 	0 0 0
+	2	[2]	SETTABUP 	0 -1 0	; _ENV "o"
+	3	[3]	GETTABUP 	0 0 -1	; _ENV "o"
+	4	[5]	CLOSURE  	1 0	; 0x7fdea0c04bd0
+	5	[3]	SETTABLE 	0 -2 1	; "add" -
+	6	[7]	GETTABUP 	0 0 -1	; _ENV "o"
+	7	[7]	SELF     	0 0 -2	; "add"
+	8	[7]	LOADK    	2 -4	; 5
+	9	[7]	CALL     	0 3 2
+	10	[7]	SETTABUP 	0 -3 0	; _ENV "a"
+	11	[7]	RETURN   	0 1
+constants (4) for 0x7fdea0c048e0:
+	1	"o"
+	2	"add"
+	3	"a"
+	4	5
+locals (0) for 0x7fdea0c048e0:
+upvalues (1) for 0x7fdea0c048e0:
+	0	_ENV	1	0
+
+function <t18.lua:3,5> (3 instructions at 0x7fdea0c04bd0)
+2 params, 3 slots, 0 upvalues, 2 locals, 1 constant, 0 functions
+	1	[4]	ADD      	2 1 -1	; - 1
+	2	[4]	RETURN   	2 2
+	3	[5]	RETURN   	0 1
+constants (1) for 0x7fdea0c04bd0:
+	1	1
+locals (2) for 0x7fdea0c04bd0:
+	0	self	1	4
+	1	n	1	4
+upvalues (0) for 0x7fdea0c04bd0:

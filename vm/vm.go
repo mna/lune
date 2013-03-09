@@ -155,6 +155,7 @@ newFrame:
 		case types.OP_LOADKx:
 			// A | R(A) := Kst(extra arg)
 			// Special instruction: must always be followed by OP_EXTRAARG
+			// Status: untested
 			if i2 := s.CI.Cl.P.Code[s.CI.PC]; i2.GetOpCode() != types.OP_EXTRAARG {
 				panic(fmt.Sprintf("%s: expected OP_EXTRAARG as next instruction, found %s", op, i2.GetOpCode()))
 			} else {
@@ -167,6 +168,7 @@ newFrame:
 
 		case types.OP_LOADBOOL:
 			// A B C | R(A) := (Bool)B; if (C) PC++
+			// Status: done
 			*args.A = asBool(args.Bx)
 
 			// Skip next instruction if C is true
@@ -177,6 +179,7 @@ newFrame:
 
 		case types.OP_LOADNIL:
 			// A B | R(A) := ... := R(B) := nil
+			// Status: done
 			for j := 0; j <= args.Bx; j++ {
 				s.CI.Frame[args.Ax+j] = nil
 			}
@@ -208,11 +211,13 @@ newFrame:
 
 		case types.OP_SETUPVAL:
 			// A B | UpValue[B] := R(A)
+			// Status: untested
 			*args.B = *args.A
 			fmt.Printf("%-10sR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
 
 		case types.OP_NEWTABLE:
 			// A B C | R(A) := {} (size = B,C)
+			// Status: incomplete
 			t := types.NewTable()
 			// TODO : Encoded array and hash sizes (B and C) are ignored at the moment
 			*args.A = t
@@ -220,6 +225,7 @@ newFrame:
 
 		case types.OP_SELF:
 			// A B C | R(A+1) := R(B); R(A) := R(B)[RK(C)]
+			// Status: done
 			s.CI.Frame[args.Ax+1] = *args.B
 			t := (*args.B).(types.Table)
 			s.CI.Frame[args.Ax] = t.Get(*args.C)

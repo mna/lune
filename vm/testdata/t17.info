@@ -1,0 +1,12 @@
+
+main <t17.lua:0,0> (2 instructions at 0x7fdd7ac048e0)
+0+ params, 3 slots, 1 upvalue, 3 locals, 0 constants, 0 functions
+	1	[2]	LOADNIL  	0 2
+	2	[2]	RETURN   	0 1
+constants (0) for 0x7fdd7ac048e0:
+locals (3) for 0x7fdd7ac048e0:
+	0	a	2	3
+	1	b	2	3
+	2	c	2	3
+upvalues (1) for 0x7fdd7ac048e0:
+	0	_ENV	1	0
