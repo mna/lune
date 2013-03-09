@@ -131,9 +131,11 @@ newFrame:
 		i = s.CI.Cl.P.Code[s.CI.PC]
 		op = i.GetOpCode()
 		s.CI.PC++
-		//s.DumpStack()
+		s.Dump()
 		s.OpCodeDebug = append(s.OpCodeDebug, op)
 		args = i.GetArgs(s)
+
+		fmt.Printf("ax: %d, bx: %d, cx: %d\n", args.Ax, args.Bx, args.Cx)
 
 		switch op {
 		case types.OP_MOVE:
@@ -323,9 +325,9 @@ newFrame:
 			if preCall(s, args, nRets) {
 				// TODO : What to do if Go Func call?
 			} else {
+				fmt.Printf("%-10sR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 				goto newFrame
 			}
-			fmt.Printf("%-10sR(A)=%v B=%v C=%v\n", op, *args.A, args.Bx, args.Cx)
 
 		case types.OP_TAILCALL:
 			panic("TAILCALL: not implemented")

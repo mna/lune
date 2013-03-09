@@ -247,7 +247,7 @@ var (
 			types.Table{"fib": someClosure, "a": 1.0},
 			0,
 		},
-		/*end2endTest{
+		end2endTest{
 			"t11",
 			"",
 			[]types.OpCode{
@@ -292,9 +292,9 @@ var (
 				types.OP_RETURN,
 			},
 			[]types.Value{nil, 2.0},
-			types.Table{"fib": someClosure, "a": 1.0},
+			types.Table{"fib": someClosure, "a": 2.0},
 			0,
-		},*/
+		},
 		end2endTest{
 			"t12",
 			"",

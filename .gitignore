@@ -2,3 +2,4 @@
 .DS_Store
 *.orig
 exp/
+*.tmp
