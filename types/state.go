@@ -143,6 +143,9 @@ func (s *State) NewCallInfo(cl *Closure, idx int, nRets int) {
 	s.CI = ci
 }
 
+// Because checkStack() can reallocate a new array for the stack, the frame
+// may become invalid. This gets called when required to make sure that the
+// frame slice always points to the stack array.
 func (ci *CallInfo) captureFrame(s *State) {
 	ci.Frame = s.Stack[ci.Base:(ci.Base + int(ci.Cl.P.Meta.MaxStackSize))]
 }

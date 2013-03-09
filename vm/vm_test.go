@@ -117,7 +117,7 @@ var (
 			types.Table{"hello": someClosure, "b": -1.0},
 			0,
 		},
-		/*end2endTest{
+		end2endTest{
 			"t8",
 			"",
 			[]types.OpCode{
@@ -192,7 +192,7 @@ var (
 			[]types.Value{nil, 3.0},
 			types.Table{"fib": someClosure, "a": 3.0},
 			0,
-		},*/
+		},
 		end2endTest{
 			"t9",
 			"",

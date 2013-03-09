@@ -131,11 +131,11 @@ newFrame:
 		i = s.CI.Cl.P.Code[s.CI.PC]
 		op = i.GetOpCode()
 		s.CI.PC++
-		s.Dump()
+		//s.Dump()
 		s.OpCodeDebug = append(s.OpCodeDebug, op)
 		args = i.GetArgs(s)
 
-		fmt.Printf("ax: %d, bx: %d, cx: %d\n", args.Ax, args.Bx, args.Cx)
+		//fmt.Printf("ax: %d, bx: %d, cx: %d\n", args.Ax, args.Bx, args.Cx)
 
 		switch op {
 		case types.OP_MOVE:

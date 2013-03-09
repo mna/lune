@@ -1,7 +1,6 @@
 package types
 
 import (
-	//"bytes"
 	"fmt"
 )
 
@@ -11,17 +10,16 @@ const (
 	// Value types constants, must match with Lua's, see lua.h grep "basic types"
 	TNIL ValType = iota
 	TBOOL
-	TLIGHTUSERDATA
+	_ // TLIGHTUSERDATA, not implemented yet
 	TNUMBER
 	TSTRING
 	TTABLE
 	TFUNCTION
-	TUSERDATA
-	TTHREAD
+	_ // TUSERDATA, not implemented yet
+	_ // TTHREAD, not implemented yet
 )
 
-var _ = fmt.Sprintf("")
-
+// Go function type
 type GoFunc func([]Value) []Value
 
 /*
@@ -85,36 +83,6 @@ type Prototype struct {
 }
 
 func (p *Prototype) String() string {
-	//var buf bytes.Buffer
-
-	/*
-			buf.WriteString(fmt.Sprintf("%+v\n", p.Meta))
-			buf.WriteString(fmt.Sprintln("Instructions (", len(p.Code), ") :"))
-			for _, c := range p.Code {
-				buf.WriteString(fmt.Sprintln(c))
-			}
-			buf.WriteString(fmt.Sprintln("Constants (", len(p.Ks), ") :"))
-			for _, v := range p.Ks {
-				buf.WriteString(fmt.Sprintf("%+v\n", v))
-			}
-			buf.WriteString(fmt.Sprintln("Functions (", len(p.Protos), ") :"))
-			for _, f := range p.Protos {
-				buf.WriteString(fmt.Sprintln(f))
-			}
-			buf.WriteString(fmt.Sprintln("Upvalues (", len(p.Upvalues), ") :"))
-			for _, u := range p.Upvalues {
-				buf.WriteString(fmt.Sprintf("%+v\n", u))
-			}
-			buf.WriteString("\nDebug information:\n\n")
-		buf.WriteString("Source: " + p.Source)
-		buf.WriteString(fmt.Sprintln("Line info (", len(p.LineInfo), ") :"))
-		buf.WriteString(fmt.Sprintln(p.LineInfo))
-		buf.WriteString(fmt.Sprintln("Local variables (", len(p.LocVars), ") :"))
-		for _, lv := range p.LocVars {
-			buf.WriteString(fmt.Sprintf("%+v\n", lv))
-		}*/
-
-	//return buf.String()
 	return fmt.Sprintf("%s.%d", p.Source, p.Meta.LineDefined)
 }
 
