@@ -1,0 +1,21 @@
+
+main <t20.lua:0,0> (9 instructions at 0x7ffdcb4048e0)
+0+ params, 2 slots, 1 upvalue, 0 locals, 5 constants, 0 functions
+	1	[2]	SETTABUP 	0 -1 -2	; _ENV "a" " 4  "
+	2	[3]	GETTABUP 	0 0 -1	; _ENV "a"
+	3	[3]	SUB      	0 0 -4	; - "  6 "
+	4	[3]	GETTABUP 	1 0 -1	; _ENV "a"
+	5	[3]	UNM      	1 1
+	6	[3]	SUB      	0 0 1
+	7	[3]	SUB      	0 0 -5	; - "  -2 "
+	8	[3]	SETTABUP 	0 -3 0	; _ENV "b"
+	9	[3]	RETURN   	0 1
+constants (5) for 0x7ffdcb4048e0:
+	1	"a"
+	2	" 4  "
+	3	"b"
+	4	"  6 "
+	5	"  -2 "
+locals (0) for 0x7ffdcb4048e0:
+upvalues (1) for 0x7ffdcb4048e0:
+	0	_ENV	1	0

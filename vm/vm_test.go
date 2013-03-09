@@ -409,6 +409,42 @@ var (
 			types.Table{"o": types.Table{"add": someClosure}, "a": 6.0},
 			0,
 		},
+		end2endTest{
+			"t19",
+			"",
+			[]types.OpCode{
+				types.OP_SETTABUP,
+				types.OP_GETTABUP,
+				types.OP_ADD,
+				types.OP_GETTABUP,
+				types.OP_UNM,
+				types.OP_ADD,
+				types.OP_ADD,
+				types.OP_SETTABUP,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, 11.0, -17.0},
+			types.Table{"a": 17.0, "b": 11.0},
+			0,
+		},
+		end2endTest{
+			"t20",
+			"",
+			[]types.OpCode{
+				types.OP_SETTABUP,
+				types.OP_GETTABUP,
+				types.OP_SUB,
+				types.OP_GETTABUP,
+				types.OP_UNM,
+				types.OP_SUB,
+				types.OP_SUB,
+				types.OP_SETTABUP,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, 4.0, -4.0},
+			types.Table{"a": " 4  ", "b": 4.0},
+			0,
+		},
 	}
 
 	someClosure = new(types.Closure)

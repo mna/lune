@@ -6,6 +6,7 @@ import (
 	"github.com/PuerkitoBio/lune/types"
 	"math"
 	"strconv"
+	"strings"
 )
 
 func asBool(i int) bool {
@@ -54,6 +55,7 @@ func coerceAndComputeUnaryOp(op byte, b types.Value) types.Value {
 		}
 	} else {
 		// TODO : Metamethods
+		panic("metamethods not implemented")
 	}
 	return nil
 }
@@ -66,6 +68,7 @@ func coerceAndComputeBinaryOp(op byte, b, c types.Value) types.Value {
 		return computeBinaryOp(op, bf, cf)
 	} else {
 		// TODO : Metamethods
+		panic("metamethods not implemented")
 	}
 	return nil
 }
@@ -75,6 +78,8 @@ func coerceToNumber(v types.Value) (float64, bool) {
 	case float64:
 		return bv, true
 	case string:
+		// Remove whitespace
+		bv = strings.Trim(bv, " ")
 		// First try to parse as an int
 		if vi, err := strconv.ParseInt(bv, 0, 64); err == nil { // TODO : Int64 fits in float64?
 			return float64(vi), true
@@ -118,6 +123,7 @@ func coerceAndConcatenate(src []types.Value) types.Value {
 			buf.WriteString(s)
 		} else {
 			// TODO : Metamethods
+			panic("metamethods not implemented")
 		}
 	}
 	return buf.String()
@@ -130,7 +136,8 @@ func computeLength(v types.Value) float64 {
 	case string:
 		return float64(len(bv))
 	default:
-		// TODO : Metamethod  
+		// TODO : Metamethod 
+		panic("metamethods not implemented")
 	}
 	panic("unreachable")
 }
@@ -141,6 +148,7 @@ func areEqual(v1, v2 types.Value) bool {
 	} else if t == types.TNIL {
 		return true
 	}
+	// TODO : Metamethods? No?
 	return v1 == v2
 }
 

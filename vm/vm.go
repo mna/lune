@@ -131,11 +131,11 @@ newFrame:
 		i = s.CI.Cl.P.Code[s.CI.PC]
 		op = i.GetOpCode()
 		s.CI.PC++
-		//s.Dump()
+		s.Dump()
 		s.OpCodeDebug = append(s.OpCodeDebug, op)
 		args = i.GetArgs(s)
 
-		//fmt.Printf("ax: %d, bx: %d, cx: %d\n", args.Ax, args.Bx, args.Cx)
+		fmt.Printf("ax: %d, bx: %d, cx: %d\n", args.Ax, args.Bx, args.Cx)
 
 		switch op {
 		case types.OP_MOVE, types.OP_LOADK, types.OP_GETUPVAL:
@@ -217,7 +217,7 @@ newFrame:
 
 		case types.OP_NEWTABLE:
 			// A B C | R(A) := {} (size = B,C)
-			// Status: incomplete
+			// Status: incomplete, missing array and hash sizes
 			t := types.NewTable()
 			// TODO : Encoded array and hash sizes (B and C) are ignored at the moment
 			*args.A = t
@@ -235,6 +235,7 @@ newFrame:
 			types.OP_MOD, types.OP_POW:
 			// A B C | R(A) := RK(B) + RK(C)
 			// A B C | R(A) := RK(B) - RK(C)
+			// Status: incomplete, missing metamethods
 			// A B C | R(A) := RK(B) * RK(C)
 			// A B C | R(A) := RK(B) ÷ RK(C)
 			// A B C | R(A) := RK(B) % RK(C)
@@ -244,6 +245,7 @@ newFrame:
 
 		case types.OP_UNM:
 			// A B | R(A) := -R(B)
+			// Status: incomplete, missing metamethods
 			*args.A = coerceAndComputeUnaryOp('-', *args.B)
 			fmt.Printf("%-10sR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
 
@@ -339,6 +341,7 @@ newFrame:
 
 		case types.OP_RETURN:
 			// A B | return R(A), ... ,R(A+B-2)
+			// TODO : Test coroutines!
 			if asBool(args.Bx) {
 				s.Top = s.CI.Base + args.Ax + args.Bx - 1
 			}

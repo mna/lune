@@ -8,6 +8,8 @@ import (
 	"unsafe"
 )
 
+// TODO : Tests, and error variables much like io.EOF
+
 const (
 	LUNE_MAJOR_VERSION      = 5
 	LUNE_MINOR_VERSION      = 2
@@ -158,8 +160,7 @@ func readConstants(r io.Reader, p *types.Prototype) {
 		}
 		switch types.ValType(t) {
 		case types.TNIL:
-			var v types.Value = nil
-			p.Ks = append(p.Ks, v)
+			p.Ks = append(p.Ks, nil)
 		case types.TBOOL:
 			var v types.Value
 			if err := binary.Read(r, binary.LittleEndian, &t); err != nil {
@@ -175,15 +176,12 @@ func readConstants(r io.Reader, p *types.Prototype) {
 			p.Ks = append(p.Ks, v)
 		case types.TNUMBER:
 			var f float64
-			var v types.Value
 			if err := binary.Read(r, binary.LittleEndian, &f); err != nil {
 				panic(err)
 			}
-			v = f
-			p.Ks = append(p.Ks, v)
+			p.Ks = append(p.Ks, f)
 		case types.TSTRING:
-			var v types.Value = readString(r)
-			p.Ks = append(p.Ks, v)
+			p.Ks = append(p.Ks, readString(r))
 		default:
 			panic(fmt.Errorf("unexpected constant type: %d", t))
 		}
