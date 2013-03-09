@@ -1,0 +1,16 @@
+
+main <t12.lua:0,0> (4 instructions at 0x7fa2db4048e0)
+0+ params, 3 slots, 1 upvalue, 3 locals, 2 constants, 0 functions
+	1	[1]	LOADK    	0 -1	; 10
+	2	[2]	LOADK    	1 -2	; "12"
+	3	[3]	ADD      	2 0 1
+	4	[3]	RETURN   	0 1
+constants (2) for 0x7fa2db4048e0:
+	1	10
+	2	"12"
+locals (3) for 0x7fa2db4048e0:
+	0	a	2	5
+	1	b	3	5
+	2	c	4	5
+upvalues (1) for 0x7fa2db4048e0:
+	0	_ENV	1	0

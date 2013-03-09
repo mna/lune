@@ -117,6 +117,197 @@ var (
 			types.Table{"hello": someClosure, "b": -1.0},
 			0,
 		},
+		/*end2endTest{
+			"t8",
+			"",
+			[]types.OpCode{
+				types.OP_CLOSURE,
+				types.OP_SETTABUP,
+				types.OP_GETTABUP,
+				types.OP_LOADK,
+				types.OP_CALL,
+				types.OP_LT,       // n=4, l1
+				types.OP_JMP,      // n=4, l2
+				types.OP_GETTABUP, // n=4, l5
+				types.OP_SUB,      // n=4, l6, 4-1
+				types.OP_CALL,     // n=4, l7
+				types.OP_LT,       //   n=3, l1
+				types.OP_JMP,      //   n=3, l2
+				types.OP_GETTABUP, //   n=3, l5
+				types.OP_SUB,      //   n=3, l6, 3-1
+				types.OP_CALL,     //   n=3, l7
+				types.OP_LT,       //     n=2, l1
+				types.OP_JMP,      //     n=2, l2
+				types.OP_GETTABUP, //     n=2, l5
+				types.OP_SUB,      //     n=2, l6, 2-1
+				types.OP_CALL,     //     n=2, l7
+				types.OP_LT,       //       n=1, l1
+				types.OP_TESTSET,  //       n=1, l3
+				types.OP_JMP,      //       n=1, l4
+				types.OP_RETURN,   //       n=1, l12, ret=1
+				types.OP_GETTABUP, //     n=2, l8
+				types.OP_SUB,      //     n=2, l9, 2-2
+				types.OP_CALL,     //     n=2, l10
+				types.OP_LT,       //       n=0, l1
+				types.OP_TESTSET,  //       n=0, l3
+				types.OP_JMP,      //       n=0, l4
+				types.OP_RETURN,   //       n=0, l12, ret=0
+				types.OP_ADD,      //     n=2, l11, 1+0
+				types.OP_RETURN,   //     n=2, l12, ret=1
+				types.OP_GETTABUP, //   n=3, l8
+				types.OP_SUB,      //   n=3, l9, 3-2
+				types.OP_CALL,     //   n=3, l10
+				types.OP_LT,       //     n=1, l1
+				types.OP_TESTSET,  //     n=1, l3
+				types.OP_JMP,      //     n=1, l4
+				types.OP_RETURN,   //     n=1, l12, ret=1
+				types.OP_ADD,      //   n=3, l11, 1+1
+				types.OP_RETURN,   //   n=3, l12, ret=2
+				types.OP_GETTABUP, // n=4, l8
+				types.OP_SUB,      // n=4, l9, 4-2
+				types.OP_CALL,     // n=4, l10
+				types.OP_LT,       //   n=2, l1
+				types.OP_JMP,      //   n=2, l2
+				types.OP_GETTABUP, //   n=2, l5
+				types.OP_SUB,      //   n=2, l6, 2-1
+				types.OP_CALL,     //   n=2, l7
+				types.OP_LT,       //     n=1, l1
+				types.OP_TESTSET,  //     n=1, l3
+				types.OP_JMP,      //     n=1, l4
+				types.OP_RETURN,   //     n=1, l12, ret=1
+				types.OP_GETTABUP, //   n=2, l8
+				types.OP_SUB,      //   n=2, l9, 2-2
+				types.OP_CALL,     //   n=2, l10
+				types.OP_LT,       //     n=0, l1
+				types.OP_TESTSET,  //     n=0, l3
+				types.OP_JMP,      //     n=0, l4
+				types.OP_RETURN,   //     n=0, l12, ret=0
+				types.OP_ADD,      //   n=2, l11, 1+0
+				types.OP_RETURN,   //   n=2, l12, ret=1
+				types.OP_ADD,      // n=4, l11, 2+1
+				types.OP_RETURN,   // n=4, l12, ret=3
+				types.OP_SETTABUP,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, 3.0},
+			types.Table{"fib": someClosure, "a": 3.0},
+			0,
+		},*/
+		end2endTest{
+			"t9",
+			"",
+			[]types.OpCode{
+				types.OP_CLOSURE,
+				types.OP_SETTABUP,
+				types.OP_GETTABUP,
+				types.OP_LOADK,
+				types.OP_CALL,
+				types.OP_LT,      // n=0, l1
+				types.OP_TESTSET, // n=0, l3
+				types.OP_JMP,     // n=0, l4
+				types.OP_RETURN,  // n=0, l12, ret=0
+				types.OP_SETTABUP,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, 0.0, 0.0},
+			types.Table{"fib": someClosure, "a": 0.0},
+			0,
+		},
+		end2endTest{
+			"t10",
+			"",
+			[]types.OpCode{
+				types.OP_CLOSURE,
+				types.OP_SETTABUP,
+				types.OP_GETTABUP,
+				types.OP_LOADK,
+				types.OP_CALL,
+				types.OP_LT,       //     n=2, l1
+				types.OP_JMP,      //     n=2, l2
+				types.OP_GETTABUP, //     n=2, l5
+				types.OP_SUB,      //     n=2, l6, 2-1
+				types.OP_CALL,     //     n=2, l7
+				types.OP_LT,       //       n=1, l1
+				types.OP_TESTSET,  //       n=1, l3
+				types.OP_JMP,      //       n=1, l4
+				types.OP_RETURN,   //       n=1, l12, ret=1
+				types.OP_GETTABUP, //     n=2, l8
+				types.OP_SUB,      //     n=2, l9, 2-2
+				types.OP_CALL,     //     n=2, l10
+				types.OP_LT,       //       n=0, l1
+				types.OP_TESTSET,  //       n=0, l3
+				types.OP_JMP,      //       n=0, l4
+				types.OP_RETURN,   //       n=0, l12, ret=0
+				types.OP_ADD,      //     n=2, l11, 1+0
+				types.OP_RETURN,   //     n=2, l12, ret=1
+				types.OP_SETTABUP,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, 1.0, 2.0, 1.0, 0.0},
+			types.Table{"fib": someClosure, "a": 1.0},
+			0,
+		},
+		/*end2endTest{
+			"t11",
+			"",
+			[]types.OpCode{
+				types.OP_CLOSURE,
+				types.OP_SETTABUP,
+				types.OP_GETTABUP,
+				types.OP_LOADK,
+				types.OP_CALL,
+				types.OP_LT,       //   n=3, l1
+				types.OP_JMP,      //   n=3, l2
+				types.OP_GETTABUP, //   n=3, l5
+				types.OP_SUB,      //   n=3, l6, 3-1
+				types.OP_CALL,     //   n=3, l7
+				types.OP_LT,       //     n=2, l1
+				types.OP_JMP,      //     n=2, l2
+				types.OP_GETTABUP, //     n=2, l5
+				types.OP_SUB,      //     n=2, l6, 2-1
+				types.OP_CALL,     //     n=2, l7
+				types.OP_LT,       //       n=1, l1
+				types.OP_TESTSET,  //       n=1, l3
+				types.OP_JMP,      //       n=1, l4
+				types.OP_RETURN,   //       n=1, l12, ret=1
+				types.OP_GETTABUP, //     n=2, l8
+				types.OP_SUB,      //     n=2, l9, 2-2
+				types.OP_CALL,     //     n=2, l10
+				types.OP_LT,       //       n=0, l1
+				types.OP_TESTSET,  //       n=0, l3
+				types.OP_JMP,      //       n=0, l4
+				types.OP_RETURN,   //       n=0, l12, ret=0
+				types.OP_ADD,      //     n=2, l11, 1+0
+				types.OP_RETURN,   //     n=2, l12, ret=1
+				types.OP_GETTABUP, //   n=3, l8
+				types.OP_SUB,      //   n=3, l9, 3-2
+				types.OP_CALL,     //   n=3, l10
+				types.OP_LT,       //     n=1, l1
+				types.OP_TESTSET,  //     n=1, l3
+				types.OP_JMP,      //     n=1, l4
+				types.OP_RETURN,   //     n=1, l12, ret=1
+				types.OP_ADD,      //   n=3, l11, 1+1
+				types.OP_RETURN,   //   n=3, l12, ret=2
+				types.OP_SETTABUP,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, 2.0},
+			types.Table{"fib": someClosure, "a": 1.0},
+			0,
+		},*/
+		end2endTest{
+			"t12",
+			"",
+			[]types.OpCode{
+				types.OP_LOADK,
+				types.OP_LOADK,
+				types.OP_ADD,
+				types.OP_RETURN,
+			},
+			[]types.Value{nil, 10.0, "12", 22.0},
+			types.Table{},
+			0,
+		},
 	}
 
 	someClosure = new(types.Closure)
@@ -160,7 +351,7 @@ func assertStack(t *testing.T, tc end2endTest, s *types.State) {
 	/*if lEx, lAc := len(tc.stack), len(s.Stack); lEx != lAc {
 		t.Errorf("%s: expected %d stack size, got %d", tc.name, lEx, lAc)
 	} else {*/
-	tc.context = "stack"
+	ori := "stack"
 	// Same stack size, check values
 	for i, vEx := range tc.stack {
 		if i == 0 && vEx == nil {
@@ -168,6 +359,7 @@ func assertStack(t *testing.T, tc end2endTest, s *types.State) {
 			continue
 		}
 		vAc := s.Stack[i]
+		tc.context = fmt.Sprintf("%s.%d", ori, i)
 		assertValues(t, tc, vEx, vAc)
 	}
 	//}
