@@ -1,0 +1,19 @@
+
+main <t13.lua:0,0> (7 instructions at 0x7fbad8c048e0)
+0+ params, 5 slots, 1 upvalue, 3 locals, 2 constants, 0 functions
+	1	[2]	LOADNIL  	0 2
+	2	[3]	LOADK    	0 -1	; "test"
+	3	[4]	LOADK    	1 -2	; "some"
+	4	[5]	MOVE     	3 0
+	5	[5]	MOVE     	4 1
+	6	[5]	CONCAT   	2 3 4
+	7	[5]	RETURN   	0 1
+constants (2) for 0x7fbad8c048e0:
+	1	"test"
+	2	"some"
+locals (3) for 0x7fbad8c048e0:
+	0	a	2	8
+	1	b	2	8
+	2	c	2	8
+upvalues (1) for 0x7fbad8c048e0:
+	0	_ENV	1	0

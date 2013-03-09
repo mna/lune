@@ -99,7 +99,7 @@ func coerceToString(v types.Value) (string, bool) {
 		if float64(vi) == bv {
 			return fmt.Sprintf("%d", vi), true
 		} else {
-			return fmt.Sprintf("%f", bv), true
+			return fmt.Sprintf("%g", bv), true
 		}
 	default:
 		return "", false
@@ -110,16 +110,12 @@ func coerceToString(v types.Value) (string, bool) {
 func coerceAndConcatenate(src []types.Value) types.Value {
 	var buf bytes.Buffer
 
-	// Start by the last two, up to the first (stop at i > 0 because the loop
-	// uses i and i-1, so the 0 position is concatenated at i=1 iteration)
-	for i := len(src) - 1; i > 0; i-- {
-		bs, bok := coerceToString(src[i])
-		cs, cok := coerceToString(src[i-1])
-		if bok && cok {
-			// Both are strings
-			// TODO : This will concatenate backwards...
-			buf.WriteString(bs)
-			buf.WriteString(cs)
+	// Stop at i < len - 1 because the loop
+	// uses i and i+1
+	for i := 0; i < len(src); i++ {
+		s, ok := coerceToString(src[i])
+		if ok {
+			buf.WriteString(s)
 		} else {
 			// TODO : Metamethods
 		}

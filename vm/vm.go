@@ -24,7 +24,7 @@ var (
 
 func doJump(s *types.State, args types.Args, e int) {
 	if asBool(args.Ax) {
-		// TODO : Close upvalues - See dojump in lvm.c.
+		closeUpvalues(s, s.CI.Base+args.Ax-1)
 	}
 	s.CI.PC += args.Bx + e
 }
@@ -138,15 +138,19 @@ newFrame:
 		//fmt.Printf("ax: %d, bx: %d, cx: %d\n", args.Ax, args.Bx, args.Cx)
 
 		switch op {
-		case types.OP_MOVE:
+		case types.OP_MOVE, types.OP_LOADK, types.OP_GETUPVAL:
 			// A B | R(A) := R(B)
-			*args.A = *args.B
-			fmt.Printf("%-10sR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
-
-		case types.OP_LOADK:
 			// A Bx | R(A) := Kst(Bx)
+			// A B | R(A) := UpValue[B]
+			// Status: done
 			*args.A = *args.B
-			fmt.Printf("%-10sR(A)=%v Kst(Bx)=%v\n", op, *args.A, *args.B)
+			if op == types.OP_MOVE {
+				fmt.Printf("%-10sR(A)=%v R(B)=%v\n", op, *args.A, *args.B)
+			} else if op == types.OP_LOADK {
+				fmt.Printf("%-10sR(A)=%v Kst(Bx)=%v\n", op, *args.A, *args.B)
+			} else {
+				fmt.Printf("%-10sR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
+			}
 
 		case types.OP_LOADKx:
 			// A | R(A) := Kst(extra arg)
@@ -178,39 +182,34 @@ newFrame:
 			}
 			fmt.Printf("%-10sA=%v B=%v\n", op, args.Ax, args.Bx)
 
-		case types.OP_GETUPVAL:
-			// A B | R(A) := UpValue[B]
-			*args.A = *args.B
-			fmt.Printf("%-10sR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
-
-		case types.OP_GETTABUP:
+		case types.OP_GETTABUP, types.OP_GETTABLE:
 			// A B C | R(A) := UpValue[B][RK(C)]
-			t := (*args.B).(types.Table)
-			*args.A = t.Get(*args.C)
-			fmt.Printf("%-10sR(A)=%v U(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
-
-		case types.OP_GETTABLE:
 			// A B C | R(A) := R(B)[RK(C)]
+			// Status: done
 			t := (*args.B).(types.Table)
 			*args.A = t.Get(*args.C)
-			fmt.Printf("%-10sR(A)=%v R(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
+			if op == types.OP_GETTABUP {
+				fmt.Printf("%-10sR(A)=%v U(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
+			} else {
+				fmt.Printf("%-10sR(A)=%v R(B)=%v RK(C)=%v\n", op, *args.A, t, *args.C)
+			}
 
-		case types.OP_SETTABUP:
+		case types.OP_SETTABUP, types.OP_SETTABLE:
 			// A B C | UpValue[A][RK(B)] := RK(C) 
+			// A B C | R(A)[RK(B)] := RK(C)
+			// Status: done
 			t := (*args.A).(types.Table)
 			t.Set(*args.B, *args.C)
-			fmt.Printf("%-10sU(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
+			if op == types.OP_SETTABUP {
+				fmt.Printf("%-10sU(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
+			} else {
+				fmt.Printf("%-10sR(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
+			}
 
 		case types.OP_SETUPVAL:
 			// A B | UpValue[B] := R(A)
 			*args.B = *args.A
 			fmt.Printf("%-10sR(A)=%v U(B)=%v\n", op, *args.A, *args.B)
-
-		case types.OP_SETTABLE:
-			// A B C | R(A)[RK(B)] := RK(C)
-			t := (*args.A).(types.Table)
-			t.Set(*args.B, *args.C)
-			fmt.Printf("%-10sR(A)=%v RK(B)=%v RK(C)=%v\n", op, t, *args.B, *args.C)
 
 		case types.OP_NEWTABLE:
 			// A B C | R(A) := {} (size = B,C)

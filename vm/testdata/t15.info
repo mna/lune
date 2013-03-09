@@ -1,0 +1,25 @@
+
+main <t15.lua:0,0> (10 instructions at 0x7f8bbbc048e0)
+0+ params, 8 slots, 1 upvalue, 3 locals, 5 constants, 0 functions
+	1	[2]	LOADNIL  	0 2
+	2	[3]	LOADK    	0 -1	; "test"
+	3	[4]	LOADK    	1 -2	; "some"
+	4	[5]	MOVE     	3 0
+	5	[5]	MOVE     	4 1
+	6	[5]	LOADK    	5 -3	; "ugly"
+	7	[5]	LOADK    	6 -4	; 123.45
+	8	[5]	LOADK    	7 -5	; 14
+	9	[5]	CONCAT   	2 3 7
+	10	[5]	RETURN   	0 1
+constants (5) for 0x7f8bbbc048e0:
+	1	"test"
+	2	"some"
+	3	"ugly"
+	4	123.45
+	5	14
+locals (3) for 0x7f8bbbc048e0:
+	0	a	2	11
+	1	b	2	11
+	2	c	2	11
+upvalues (1) for 0x7f8bbbc048e0:
+	0	_ENV	1	0
