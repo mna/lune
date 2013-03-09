@@ -60,6 +60,8 @@ func (t Table) Get(k Value) Value {
 }
 
 func (t Table) Len() int {
+	// TODO : This is not how the # (length operator) works in Lua, see
+	// http://www.lua.org/manual/5.2/manual.html#3.4.6
 	return len(t)
 }
 
