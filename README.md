@@ -11,7 +11,7 @@ A pure Go implementation of the Lua virtual machine (v5.2).
 
 ## Current status
 
-Under heavy development. Unstable. Ugly. Unsafe. Unfast.
+Dormant. Unstable. Ugly. Unsafe. Unfast.
 
 A few things work, though, like ummm... loading and deserializing the binary chunks. On 64-bit little-endian architectures at least. And running some trivial programs (see ./vm/testdata). Closures that actually use the closed-over environment currently don't work (*upvalues* in Lua literature). Tail calls and variadic arguments and return values don't work. Metamethods are not there yet.
 
