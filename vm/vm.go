@@ -2,7 +2,8 @@ package vm
 
 import (
 	"fmt"
-	"github.com/PuerkitoBio/lune/types"
+
+	"github.com/mna/lune/types"
 )
 
 var (
@@ -198,7 +199,7 @@ newFrame:
 			}
 
 		case types.OP_SETTABUP, types.OP_SETTABLE:
-			// A B C | UpValue[A][RK(B)] := RK(C) 
+			// A B C | UpValue[A][RK(B)] := RK(C)
 			// A B C | R(A)[RK(B)] := RK(C)
 			// Status: done
 			t := (*args.A).(types.Table)
@@ -327,7 +328,7 @@ newFrame:
 				// Adjust top of stack, since we know exactly the number of arguments.
 				s.Top = s.CI.Base + args.Ax + args.Bx
 			}
-			// Else, it is because last param to this call was a func call with unknown 
+			// Else, it is because last param to this call was a func call with unknown
 			// number of results, so this call actually set the Top to whatever it had to be.
 			if preCall(s, args, nRets) {
 				// TODO : What to do if Go Func call?
@@ -430,7 +431,7 @@ newFrame:
 		case types.OP_SETLIST:
 			// A B C | R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B
 			// Sets the values for a range of array elements. B is the number of elements.
-			// Field C encodes the block number of the table to be initialized. The block 
+			// Field C encodes the block number of the table to be initialized. The block
 			// size is denoted by FPF. FPF is “fields per flush”, with a value of 50.
 			// For example, for array locations 1 to 20, C will be 1 and B will be 20.
 			var c, n int

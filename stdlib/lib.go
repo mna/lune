@@ -2,7 +2,8 @@ package stdlib
 
 import (
 	"fmt"
-	"github.com/PuerkitoBio/lune/types"
+
+	"github.com/mna/lune/types"
 )
 
 func OpenLibs(t types.Table) {

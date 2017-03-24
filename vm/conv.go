@@ -3,10 +3,11 @@ package vm
 import (
 	"bytes"
 	"fmt"
-	"github.com/PuerkitoBio/lune/types"
 	"math"
 	"strconv"
 	"strings"
+
+	"github.com/mna/lune/types"
 )
 
 func asBool(i int) bool {
@@ -136,7 +137,7 @@ func computeLength(v types.Value) float64 {
 	case string:
 		return float64(len(bv))
 	default:
-		// TODO : Metamethod 
+		// TODO : Metamethod
 		panic("metamethods not implemented")
 	}
 	panic("unreachable")

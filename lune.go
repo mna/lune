@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/PuerkitoBio/lune/serializer"
-	"github.com/PuerkitoBio/lune/stdlib"
-	"github.com/PuerkitoBio/lune/types"
-	"github.com/PuerkitoBio/lune/vm"
 	"os"
+
+	"github.com/mna/lune/serializer"
+	"github.com/mna/lune/stdlib"
+	"github.com/mna/lune/types"
+	"github.com/mna/lune/vm"
 )
 
 func loadFile(fn string) (*types.Prototype, error) {

@@ -3,9 +3,10 @@ package serializer
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/PuerkitoBio/lune/types"
 	"io"
 	"unsafe"
+
+	"github.com/mna/lune/types"
 )
 
 // TODO : Tests, and error variables much like io.EOF

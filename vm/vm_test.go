@@ -2,11 +2,12 @@ package vm
 
 import (
 	"fmt"
-	"github.com/PuerkitoBio/lune/serializer"
-	"github.com/PuerkitoBio/lune/types"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/mna/lune/serializer"
+	"github.com/mna/lune/types"
 )
 
 // Definition of an end to end test case
